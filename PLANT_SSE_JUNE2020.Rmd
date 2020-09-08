@@ -232,11 +232,12 @@ plant_grass<- plant_tidy %>%
   spread(Species, cover) %>%
   replace(is.na(.), 0) %>%
   group_by(Plot, Year, Treat) %>%
-  summarise_at(vars(22:49), sum) 
+  summarise_at(vars(23:48), sum) 
 
 #add column for total cover of each group: grass, forb, woody, legumes  
 plant_growth <- plant_tidy  %>% 
-  group_by(Year, Treat, Plot, Group) %>% 
+ # group_by(Year, Treat, Plot, Group) %>%
+  group_by(Year, Treat, Plot, Growth) %>% 
   summarise_at(c("cover"), sum) %>% 
   ungroup()%>%
   mutate(Year = as.factor(Year),
@@ -244,7 +245,7 @@ plant_growth <- plant_tidy  %>%
 
 #covert to wide df
 plant_g_wide <- plant_growth %>% 
-  spread(Group, cover) %>% 
+  spread(Growth, cover) %>% 
   replace(is.na(.), 0)
 
 #put underscore for fescue 
@@ -252,6 +253,48 @@ names(plant_community_disease)[names(plant_community_disease) == "Schedonorus ar
 
 #integrate with data 
 plant_group_etc <- merge(plant_community_disease, plant_g_wide, by =c("Plot", "Year", "Treat"))
+```
+
+```{r plant_height}
+plant_tidy %>% filter(Max_height_cm >0)%>%
+  group_by(Treat, Year, Species, Max_height_cm)%>%
+  summarise_at(c("cover"), mean) %>%
+  ggplot +
+  geom_point(aes(x= Max_height_cm, y =cover, fill=Treat), pch=21)+
+  rita_theme+facet_wrap(~Year)+
+  guides(fill=FALSE)
+
+plant_tidy %>% filter(Max_height_cm >0)%>%
+  group_by(Treat, Year, Species, Max_height_cm)%>%
+  summarise_at(c("cover"), mean) %>%
+  filter(cover >0)%>%
+  ggplot +
+  geom_histogram(aes(x=Max_height_cm, fill=Treat))+
+  rita_theme+facet_wrap(~Year*Treat)+
+  scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP"))+
+  labs(x="Max plant height (cm) data from Wilfahrt 2020 Supp",  y="# Taxa")+
+  geom_vline(xintercept = 65.8)+
+  guides(fill=FALSE)
+
+plant_tidy %>% filter(Max_height_cm >0)%>%
+  group_by(Treat, Year, Species, Max_height_cm)%>%
+  summarise_at(c("cover"), mean) %>%
+  filter(cover >0)%>%
+  filter(Max_height_cm < 65)%>%
+  ggplot(aes(x=Max_height_cm, y = log10(cover), fill=Treat)) +
+  geom_point(aes(x=Max_height_cm, y = log10(cover), fill=Treat), pch=21, size=3)+
+  #geom_bar(stat = "identity")+
+  #rita_theme+
+  theme_bw()+
+  facet_wrap(~Year)+
+  scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP"))+
+  labs(x="Max plant height (cm) data from Wilfahrt 2020 Supp",  y="% cover")+
+  geom_vline(xintercept = 65.8) #+
+  #guides(fill=FALSE, color=FALSE)
 ```
 
 ```{r parasite AUDPS for each species}
@@ -331,7 +374,8 @@ plant_SSE <- plant_SSE %>% mutate(Plot = as.factor(Plot),
                                   forb_zscore = scale(Forbs),
                                   legumes_zscore = scale(Legumes),
                                   woody_zscore = scale(Woody),
-                                  fescue_zscore = scale(Schedonorus_arundinaceus)) 
+                                  fescue_zscore = scale(Schedonorus_arundinaceus)
+                                  ) 
 
 #write.csv(plant_SSE, "plant_SSE.csv")
 
@@ -1052,12 +1096,55 @@ RM MANOVA 4 groups as vectors in MANOVA
 ```{r manova}
 ###########################################################################################################
 # repeated measures manova
-group_manova <- manova(cbind(Forbs, Grasses, Woody) ~ Treat * Year + Error(Plot/Year), 
+
+plant_SSE$total_cover <- rowSums(plant_SSE[,112:118]) 
+plant_SSE <- plant_SSE %>% mutate(forb_relative = Forbs/total_cover,
+                                  C3_relative = C3/total_cover,
+                                  C4_relative = C4/total_cover,
+                                  woody_relative = Woody/total_cover,
+                                  legume_relative = Legumes/total_cover,
+                                  Year= as.factor(Year)
+                                  )
+
+group_manova <- manova(cbind(forb_relative, C3_relative, C4_relative, woody_relative) ~ Treat * Year + Error(Plot/Year), 
                             contrasts = list(Treat =contr.sum, 
                                              Year = contr.sum),
                             data= plant_SSE)
 summary(group_manova, test = c( "Wilks"))
 ```
+```{r group cover graphic}
+
+plant_SSE %>% 
+  group_by(Year, Treat)%>% 
+  mutate(mean = mean(C3_relative), std = sd(C3_relative)) %>%
+  ggplot(aes(x=Year, y = mean, group=Treat))+
+  geom_point(aes(x=Year, y = C3_relative, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
+  geom_errorbar(aes(ymin=mean - std, ymax=mean + std),position=dodge, width=0.1) +
+  geom_point(aes(x=Year, y =mean, fill=Treat), 
+             pch=21, size=2.75, position=dodge)+
+  rita_theme+
+  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP")) +
+   guides(color=FALSE, fill=FALSE) +
+   labs(x = "",  y = "C3 grass cover")
+
+plant_SSE %>% 
+  group_by(Year, Treat)%>% 
+  mutate(mean = mean(C4_relative), std = sd(C4_relative)) %>%
+  ggplot(aes(x=Year, y = mean, group=Treat))+
+  geom_point(aes(x=Year, y = C4_relative, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
+  geom_errorbar(aes(ymin=mean - std, ymax=mean + std),position=dodge, width=0.1) +
+  geom_point(aes(x=Year, y =mean, fill=Treat), 
+             pch=21, size=2.75, position=dodge)+
+  rita_theme+
+  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP")) +
+   guides(color=FALSE, fill=FALSE) +
+   labs(x = "",  y = "C4 grass cover")
+```
+
 
 Although fungicide application did not influence fescue cover, fungicide treatment influenced the relative cover of grasses, forbs, legumes and woody species (RM-MANOVA Pillai trace, Treat: p = < 0.0001, F3,180 = 5.33; Year: p <0.0001, F2,180 = 19.19). There was no interaction between fungicide treatment and year (Treat*Year: p = 0.33, F6,180 = 1.11). 
 
@@ -1085,9 +1172,9 @@ dodge <- position_dodge(width = 0.50)
 
 forb1 <-plant_SSE %>%
   group_by(Year, Treat)%>% 
-  mutate(mean = mean(Forbs), std = sd(Forbs)) %>%
+  mutate(mean = mean(forb_relative), std = sd(forb_relative)) %>%
   ggplot(aes(x=Year, y = mean, group=Treat))+
-  geom_point(aes(x=Year, y = Forbs, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
+  geom_point(aes(x=Year, y = forb_relative, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
   geom_errorbar(aes(ymin=mean - std, ymax=mean + std),position=dodge, width=0.1) +
   geom_point(aes(x=Year, y =mean, fill=Treat), 
              pch=21, size=2.75, position=dodge)+
@@ -1199,9 +1286,9 @@ pairs(woody_emm)
 dodge <- position_dodge(width = 0.50)
 woody1 <-plant_SSE %>% 
   group_by(Year, Treat)%>% 
-  mutate(mean = mean(Woody), std = sd(Woody)) %>%
+  mutate(mean = mean(woody_relative), std = sd(woody_relative)) %>%
   ggplot(aes(x=Year, y = mean, group=Treat))+
-  geom_point(aes(x=Year, y = Woody, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
+  geom_point(aes(x=Year, y = woody_relative, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
   geom_errorbar(aes(ymin=mean - std, ymax=mean + std),position=dodge, width=0.1) +
   geom_point(aes(x=Year, y =mean, fill=Treat), 
              pch=21, size=2.75, position=dodge)+
@@ -2151,13 +2238,6 @@ dummy <-data.frame(Treat = c('C->R->P', 'Control', 'CR->P', 'CRP'),
 #plot(Grasses~AUDPS_parasite, data= plant_SSE)
 
 plant_SSE <- merge(plant_SSE, dummy, by =c('Treat'))# %>%  mutate_at(c("X1", "X2", "X3"), as.factor) 
-
-plant_SSE$total_cover <- rowSums(plant_SSE[,112:115]) 
-plant_SSE <- plant_SSE %>% mutate(forb_relative = Forbs/total_cover,
-                                  grass_relative = Grasses/total_cover,
-                                  woody_relative = Woody/total_cover,
-                                  legume_relative = Legumes/total_cover,
-                                  forb_logit = logit(Forbs))
 
 plant_SSE %>% ggplot()+ geom_point(aes(x=total_cover, y = log10(sp_rich))) +theme_bw()
 plant_SSE %>% ggplot()+ geom_point(aes(x=total_cover, y = log_biomass))+facet_wrap(~Year) +theme_bw()
