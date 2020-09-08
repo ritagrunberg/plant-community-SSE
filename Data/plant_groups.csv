@@ -1,106 +1,106 @@
-Species,Group,Origin ,Pathway,AccSpeciesID,Growth,Family,Group2,Duration
-Acalypha rhomboidea,Forbs,Native,,,Forbs,Euphorbiaceae,Dicot,Annual
-Acalypha sp.,Forbs,Native,,,Forbs,Euphorbiaceae,Dicot,Annual
-Acalypha virginica,Forbs,Native,,,Forbs,Euphorbiaceae,Dicot,Annual
-Acer rubrum,Woody ,Native,,,Woody,Aceraceae,Dicot,Perennial
-Aira caryophyllea ,Grasses,Exotic,C3,,Grasses,Poaceae,Monocot,Annual
-Allium vineale,Forbs,Exotic,,2590,Forbs,Liliaceae ,Monocot,Perennial
-Ambrosia artemisiifolia,Forbs,Native,,,Forbs,Asteraceae,Dicot,Annual
-Andropogon virginicus ,Grasses,Native,C4,3639,Grasses,Poaceae,Monocot,Perennial
-Anthoxanthum odoratum,Grasses,Exotic,C3,4036,Grasses,Poaceae,Monocot,Perennial
-Apocynum cannibinum,Forbs,Native,,4237,Forbs,Apocynaceae,Dicot,Perennial
-Asclepias syriaca,Forbs,Native,,,Forbs,Asclepiadaceae,Dicot,Perennial
-Campsis radicans,Woody ,Native,,,Woody,Bignoniaceae,Dicot,Perennial
-Carex # 2 leathery,Grasses,X,C3,,Grasses,Cyperaceae,Monocot,Perennial
-Carex complanata.,Grasses,Native,C3,,Grasses,Cyperaceae,Monocot,Perennial
-Carex sp.,Grasses,X,C3,,Grasses,Cyperaceae,Monocot,Perennial
-Celtis laevigata,Woody ,Native,,11491,Woody,Ulmaceae,Dicot,Perennial
-Cercis canadensis,Woody ,Native,,,Woody,Fabaceae,Dicot,Perennial
-Chamaecrista nictitans ,Legumes,Native,,,Forbs,Fabaceae,Dicot,Perennial
-Conyza canadensis,Forbs,Native,,21638,Forbs,Asteraceae,Dicot,Annual
-Cornus florida,Woody ,Native,,,Woody,Cornaceae ,Dicot,Perennial
-Cynodon dactylon,Grasses,Exotic,C4,,Grasses,Poaceae,Monocot,Perennial
-Dactylis glomeratus,Grasses,Exotic,C3,,Grasses,Poaceae,Monocot,Perennial
-Danthonia spicata,Grasses,Native,C3,,Grasses,Poaceae,Monocot,Perennial
-Daucus carota,Forbs,Exotic,,,Forbs,Apiaceae,Dicot,Biennial
-Desmodium sp.,Legumes,Native,,,Legumes,Fabaceae,Dicot,Perennial
-Dichanthelium dichotomum,Grasses,Native,C3,,Grasses,Poaceae,Monocot,Perennial
-"Dichanthelium sp. (""fuzzy panicum"")",Grasses,Native,C3,,Grasses,Poaceae,Monocot,Perennial
-Digitaria sanguinalis,Grasses,Exotic,C4,18103,Grasses,Poaceae,Monocot,Annual
-Diodia teres,Forbs,Native,,,Forbs,Rubiaceae,Dicot,Perennial
-Eragrostis capillaris,Grasses,Native,C4,,Grasses,Poaceae,Monocot,Annual
-Erechtites hieraciifolia,Forbs,Native,,,Forbs,Asteraceae,Dicot,Annual
-Erigeron annuus,Forbs,Native,,,Forbs,Asteraceae,Dicot,Annual
-Erigeron strigosus,Forbs,Native,,,Forbs,Asteraceae,Dicot,Annual
-Eupatorium capillaris,Forbs,Native,,,Forbs,Asteraceae,Dicot,Perennial
-Fragaria sp.,Forbs,Native,,,Forbs,Rosacea,Dicot,Perennial
-Fraxinus sp.,Woody ,Native,,,Woody,Oleaceae,Dicot,Perennial
-Fuzzy Auricle Dichanthelium,Grasses,Native,C3,,Grasses,Poaceae,Monocot,Perennial
-Galium sp.,Forbs,Exotic,,,Forbs,Rubiaceae,Dicot,Annual
-Gamochaeta purpurea,Forbs,Native,,,Forbs,Asteraceae,Dicot,Annual
-Holcus lanatus,Grasses,Exotic,C3,29305,Grasses,Poaceae,Monocot,Perennial
-Houstonia sp.,Forbs,Native,,,Forbs,Rubiaceae,Dicot,X
-Hypericum sp.,Forbs,X,,,Forbs," 	Clusiaceae ",Dicot,X
-Ipomea sp.,Forbs,X,,,Forbs,X,X,X
-Juncus sp.,Grasses,X,C3,,Grasses,Juncaceae,Monocot,X
-Juniperus virginiana,Woody ,Native,,31598,Woody,Cupressaceae,Gymnosperm,Perennial
-Kummerowia stipulacea,Legumes,Exotic,,,Forbs,Fabaceae,Dicot,Annual
-Lespedeza cuneata,Legumes,Exotic,,33012,Forbs,Fabaceae,Dicot,Perennial
-Leucanthemum vulgare,Forbs,Exotic,,,Forbs,Asteraceae,Dicot,Perennial
-Liquidambar styraciflua,Woody ,Native,,,Woody,Hamamelidaceae,Dicot,Perennial
-Liriodendron tulipifera,Woody ,Native,,,Woody,Magnoliaceae,Dicot,Perennial
-Litter,Other,X,,,X,X,X,X
-Lonicera japonica,Woody ,Exotic,,34141,Woody,Caprifoliaceae,Dicot,Perennial
-Medicago sp.,Legumes,X,,,X,X,X,X
-Oxalis dillenii,Forbs,Native,,39581,Forbs,Oxalidaceae ,Dicot,Perennial
-Packera anonyma,Forbs,Native,,,Forbs,Asteraceae,Dicot,Perennial
-Parthenocissus quinquefolia,Woody ,Native,,40428,Woody,Vitaceae,Dicot,Perennial
-Paspalum dilatatum,Grasses,Exotic,C4,40457,Grasses,Poaceae,Monocot,Perennial
-Paspalum floridanum,Grasses,Native,C4,,Grasses,Poaceae,Monocot,Perennial
-Paspalum notatum,Grasses,Native,C4,40469,Grasses,Poaceae,Monocot,Perennial
-Paspalum_sp,Grasses,X,C4,,Grasses,Poaceae,Monocot,Perennial
-Physalis sp.,Forbs,X,,,Forbs,Solanaceae,Dicot,X
-Pinus taeda,Woody ,Native,,42188,Woody,Pinaceae,Gymnosperm,Perennial
-Plantago aristata,Forbs,Native,,,Forbs,Plantaginaceae,Dicot,Perennial
-Plantago lanceolata,Forbs,Exotic,,42541,Forbs,Plantaginaceae,Dicot,Perennial
-Poa pratensis,Grasses,Exotic,C3,42870,Grasses,Poaceae,Monocot,Perennial
-Prunella vulgaris,Forbs,Native,,,Forbs,Lamiaceae,Dicot,Perennial
-Ranunculus sp.,Forbs,X,,,Forbs,Ranunculaceae,Dicot,X
-Rosa multiflora,Woody ,Exotic,,46762,Woody,Rosaceae,Dicot,Perennial
-Rubus argutus,Woody ,Native,,46917,Woody,Rosaceae,Dicot,Perennial
-Rumex acetosella,Forbs,Exotic,,,Forbs,Polygonaceae,Dicot,Perennial
-Salvia lyrata,Forbs,Native,,,Forbs,Lamiaceae,Dicot,Perennial
-Sassafras albidum,Woody ,Native,,,Woody,Lauraceae,Dicot,Perennial
-Schedonorus arundinaceus,Grasses,Exotic,C3,24150,Grasses,Poaceae,Monocot,Perennial
-Schizachyrium scoparium,Grasses,Native,C4,,Grasses,Poaceae,Monocot,Perennial
-Scutellaria integrifolia,Forbs,Native,,,Forbs,Lamiaceae,Dicot,Perennial
-Setaria parviflora,Grasses,Native,C4,,Grasses,Poaceae,Monocot,Perennial
-Sida rhombifolia,Forbs,Native,,,Forbs,Malvaceae,Dicot,Perennial
-Smilax rotundifolia,Woody ,Native,,,Woody,Smilacaceae,Monocot,Perennial
-Solanum carolinense ,Forbs,Native,,50655,Forbs,Solanaceae,Dicot,Perennial
-Solidago altissima,Forbs,Native,,,Forbs,Asteraceae,Dicot,Perennial
-Solidago pinetorum,Forbs,Native,,,Forbs,Asteraceae,Dicot,Perennial
-Sorghastrum nutans,Grasses,Native,C4,,Grasses,Poaceae,Monocot,Perennial
-Sorghum halepense,Grasses,Exotic,C4,51149,Grasses,Poaceae,Monocot,Perennial
-Steinchisma hians,Grasses,Native,Both,,Grasses,Poaceae,Monocot,Perennial
-Symphotrichum pilosum,Forbs,Native,,,Forbs,Asteraceae,Dicot,Perennial
-Thistle,Woody ,X,,,Forbs,Asteraceae,Dicot,X
-Toxicodendron radicans,Woody ,Native,,,Woody,Anacardiaceae,Dicot,Perennial
-Tridens flavus,Grasses,Native,C4,54908,Grasses,Poaceae,Monocot,Perennial
-Trifolium pratense,Legumes,Native,,,Forbs,Fabaceae,Dicot,Perennial
-Triodanis perfoliata,Forbs,Native,,,Forbs,Campanulaceae,Dicot,Annual
-Tripsacum dactyloides,Grasses,Native,C4,55142,Grasses,Poaceae,Monocot,Perennial
-Ulmus alata,Woody ,Native,,,Woody,Ulmaceae,Dicot,Perennial
-Unk  Dich-bigleaves,Grasses,X,,,X,X,X,X
-UNK Andro-like,Grasses,X,,,X,X,X,X
-UNK Aster 1,Woody ,X,,,X,X,X,X
-Unk Dichanthelium #1,Grasses,X,,,X,X,X,X
-Unk Dich-longleaves,Grasses,X,,,X,X,X,X
-UNK Lespedeza,Legumes,X,,,X,X,X,X
-Urdica sp.,Forbs,X,,,X,X,X,X
-Verbesina occidentalis,Forbs,Native,,100815,Forbs,Asteraceae,Dicot,Perennial
-Veronica sp.,Forbs,X,,,Forbs,Scrophulariaceae,Dicot,X
-Vetch,Legumes,X,,,Forbs,Cuscutaceae,Dicot,Perennial
-Vetch-long black pods #1,Legumes,X,,,X,X,X,X
-Vetch-short brown pods #2 ,Legumes,X,,,X,X,X,X
-Vitis sp.,Woody ,X,,,Woody,Vitaceae,Dicot,X
+Species,Group,Origin ,Pathway,AccSpeciesID,Growth,Family,Group2,Duration,Max_height_cm
+Acalypha rhomboidea,Forbs,Native,,,Forbs,Euphorbiaceae,Dicot,Annual,
+Acalypha sp.,Forbs,Native,,,Forbs,Euphorbiaceae,Dicot,Annual,
+Acalypha virginica,Forbs,Native,,,Forbs,Euphorbiaceae,Dicot,Annual,
+Acer rubrum,Woody ,Native,,,Woody,Aceraceae,Dicot,Perennial,
+Aira caryophyllea ,Grasses,Exotic,C3,,C3,Poaceae,Monocot,Annual,
+Allium vineale,Forbs,Exotic,,2590,Forbs,Liliaceae ,Monocot,Perennial,
+Ambrosia artemisiifolia,Forbs,Native,,,Forbs,Asteraceae,Dicot,Annual,
+Andropogon virginicus ,Grasses,Native,C4,3639,C4,Poaceae,Monocot,Perennial,36.3
+Anthoxanthum odoratum,Grasses,Exotic,C3,4036,C3,Poaceae,Monocot,Perennial,49.5
+Apocynum cannibinum,Forbs,Native,,4237,Forbs,Apocynaceae,Dicot,Perennial,108.7
+Asclepias syriaca,Forbs,Native,,,Forbs,Asclepiadaceae,Dicot,Perennial,
+Campsis radicans,Woody ,Native,,,Woody,Bignoniaceae,Dicot,Perennial,
+Carex # 2 leathery,Grasses,X,C3,,C3,Cyperaceae,Monocot,Perennial,
+Carex complanata.,Grasses,Native,C3,,C3,Cyperaceae,Monocot,Perennial,47.4
+Carex sp.,Grasses,X,C3,,C3,Cyperaceae,Monocot,Perennial,
+Celtis laevigata,Woody ,Native,,11491,Woody,Ulmaceae,Dicot,Perennial,
+Cercis canadensis,Woody ,Native,,,Woody,Fabaceae,Dicot,Perennial,
+Chamaecrista nictitans ,Legumes,Native,,,Forbs,Fabaceae,Dicot,Perennial,
+Conyza canadensis,Forbs,Native,,21638,Forbs,Asteraceae,Dicot,Annual,94.9
+Cornus florida,Woody ,Native,,,Woody,Cornaceae ,Dicot,Perennial,
+Cynodon dactylon,Grasses,Exotic,C4,,C4,Poaceae,Monocot,Perennial,
+Dactylis glomeratus,Grasses,Exotic,C3,,C3,Poaceae,Monocot,Perennial,
+Danthonia spicata,Grasses,Native,C3,,C3,Poaceae,Monocot,Perennial,
+Daucus carota,Forbs,Exotic,,,Forbs,Apiaceae,Dicot,Biennial,39
+Desmodium sp.,Legumes,Native,,,Legumes,Fabaceae,Dicot,Perennial,
+Dichanthelium dichotomum,Grasses,Native,C3,,C3,Poaceae,Monocot,Perennial,38
+"Dichanthelium sp. (""fuzzy panicum"")",Grasses,Native,C3,,C3,Poaceae,Monocot,Perennial,
+Digitaria sanguinalis,Grasses,Exotic,C4,18103,C4,Poaceae,Monocot,Annual,47.6
+Diodia teres,Forbs,Native,,,Forbs,Rubiaceae,Dicot,Perennial,
+Eragrostis capillaris,Grasses,Native,C4,,C4,Poaceae,Monocot,Annual,37
+Erechtites hieraciifolia,Forbs,Native,,,Forbs,Asteraceae,Dicot,Annual,
+Erigeron annuus,Forbs,Native,,,Forbs,Asteraceae,Dicot,Annual,88.2
+Erigeron strigosus,Forbs,Native,,,Forbs,Asteraceae,Dicot,Annual,
+Eupatorium capillaris,Forbs,Native,,,Forbs,Asteraceae,Dicot,Perennial,
+Fragaria sp.,Forbs,Native,,,Forbs,Rosacea,Dicot,Perennial,
+Fraxinus sp.,Woody ,Native,,,Woody,Oleaceae,Dicot,Perennial,
+Fuzzy Auricle Dichanthelium,Grasses,Native,C3,,C3,Poaceae,Monocot,Perennial,
+Galium sp.,Forbs,Exotic,,,Forbs,Rubiaceae,Dicot,Annual,
+Gamochaeta purpurea,Forbs,Native,,,Forbs,Asteraceae,Dicot,Annual,
+Holcus lanatus,Grasses,Exotic,C3,29305,C3,Poaceae,Monocot,Perennial,35.3
+Houstonia sp.,Forbs,Native,,,Forbs,Rubiaceae,Dicot,X,
+Hypericum sp.,Forbs,X,,,Forbs," 	Clusiaceae ",Dicot,X,
+Ipomea sp.,Forbs,X,,,Forbs,X,X,X,
+Juncus sp.,Grasses,X,C3,,C3,Juncaceae,Monocot,X,
+Juniperus virginiana,Woody ,Native,,31598,Woody,Cupressaceae,Gymnosperm,Perennial,
+Kummerowia stipulacea,Legumes,Exotic,,,Forbs,Fabaceae,Dicot,Annual,
+Lespedeza cuneata,Legumes,Exotic,,33012,Forbs,Fabaceae,Dicot,Perennial,101
+Leucanthemum vulgare,Forbs,Exotic,,,Forbs,Asteraceae,Dicot,Perennial,
+Liquidambar styraciflua,Woody ,Native,,,Woody,Hamamelidaceae,Dicot,Perennial,
+Liriodendron tulipifera,Woody ,Native,,,Woody,Magnoliaceae,Dicot,Perennial,
+Litter,Other,X,,,Other,X,X,X,
+Lonicera japonica,Woody ,Exotic,,34141,Woody,Caprifoliaceae,Dicot,Perennial,48.2
+Medicago sp.,Legumes,X,,,Legumes,X,X,X,
+Oxalis dillenii,Forbs,Native,,39581,Forbs,Oxalidaceae ,Dicot,Perennial,31.2
+Packera anonyma,Forbs,Native,,,Forbs,Asteraceae,Dicot,Perennial,28.9
+Parthenocissus quinquefolia,Woody ,Native,,40428,Woody,Vitaceae,Dicot,Perennial,
+Paspalum dilatatum,Grasses,Exotic,C4,40457,C4,Poaceae,Monocot,Perennial,
+Paspalum floridanum,Grasses,Native,C4,,C4,Poaceae,Monocot,Perennial,
+Paspalum notatum,Grasses,Native,C4,40469,C4,Poaceae,Monocot,Perennial,
+Paspalum_sp,Grasses,X,C4,,C4,Poaceae,Monocot,Perennial,
+Physalis sp.,Forbs,X,,,Forbs,Solanaceae,Dicot,X,
+Pinus taeda,Woody ,Native,,42188,Woody,Pinaceae,Gymnosperm,Perennial,
+Plantago aristata,Forbs,Native,,,Forbs,Plantaginaceae,Dicot,Perennial,
+Plantago lanceolata,Forbs,Exotic,,42541,Forbs,Plantaginaceae,Dicot,Perennial,33.5
+Poa pratensis,Grasses,Exotic,C3,42870,C3,Poaceae,Monocot,Perennial,
+Prunella vulgaris,Forbs,Native,,,Forbs,Lamiaceae,Dicot,Perennial,
+Ranunculus sp.,Forbs,X,,,Forbs,Ranunculaceae,Dicot,X,
+Rosa multiflora,Woody ,Exotic,,46762,Woody,Rosaceae,Dicot,Perennial,
+Rubus argutus,Woody ,Native,,46917,Woody,Rosaceae,Dicot,Perennial,
+Rumex acetosella,Forbs,Exotic,,,Forbs,Polygonaceae,Dicot,Perennial,56.2
+Salvia lyrata,Forbs,Native,,,Forbs,Lamiaceae,Dicot,Perennial,24
+Sassafras albidum,Woody ,Native,,,Woody,Lauraceae,Dicot,Perennial,
+Schedonorus arundinaceus,Grasses,Exotic,C3,24150,C3,Poaceae,Monocot,Perennial,65.8
+Schizachyrium scoparium,Grasses,Native,C4,,C4,Poaceae,Monocot,Perennial,41.6
+Scutellaria integrifolia,Forbs,Native,,,Forbs,Lamiaceae,Dicot,Perennial,48.7
+Setaria parviflora,Grasses,Native,C4,,C4,Poaceae,Monocot,Perennial,38.7
+Sida rhombifolia,Forbs,Native,,,Forbs,Malvaceae,Dicot,Perennial,
+Smilax rotundifolia,Woody ,Native,,,Woody,Smilacaceae,Monocot,Perennial,
+Solanum carolinense ,Forbs,Native,,50655,Forbs,Solanaceae,Dicot,Perennial,57.5
+Solidago altissima,Forbs,Native,,,Forbs,Asteraceae,Dicot,Perennial,73.7
+Solidago pinetorum,Forbs,Native,,,Forbs,Asteraceae,Dicot,Perennial,75.7
+Sorghastrum nutans,Grasses,Native,C4,,C4,Poaceae,Monocot,Perennial,
+Sorghum halepense,Grasses,Exotic,C4,51149,C4,Poaceae,Monocot,Perennial,115.7
+Steinchisma hians,Grasses,Native,Both,,Both,Poaceae,Monocot,Perennial,
+Symphotrichum pilosum,Forbs,Native,,,Forbs,Asteraceae,Dicot,Perennial,
+Thistle,Woody ,X,,,Forbs,Asteraceae,Dicot,X,
+Toxicodendron radicans,Woody ,Native,,,Woody,Anacardiaceae,Dicot,Perennial,
+Tridens flavus,Grasses,Native,C4,54908,C4,Poaceae,Monocot,Perennial,48
+Trifolium pratense,Legumes,Native,,,Forbs,Fabaceae,Dicot,Perennial,
+Triodanis perfoliata,Forbs,Native,,,Forbs,Campanulaceae,Dicot,Annual,
+Tripsacum dactyloides,Grasses,Native,C4,55142,C4,Poaceae,Monocot,Perennial,
+Ulmus alata,Woody ,Native,,,Woody,Ulmaceae,Dicot,Perennial,
+Unk  Dich-bigleaves,Grasses,X,,,Grasses,X,X,X,
+UNK Andro-like,Grasses,X,,,Grasses,X,X,X,
+UNK Aster 1,Woody ,X,,,Woody ,X,X,X,
+Unk Dichanthelium #1,Grasses,X,,,Grasses,X,X,X,
+Unk Dich-longleaves,Grasses,X,,,Grasses,X,X,X,
+UNK Lespedeza,Legumes,X,,,Legumes,X,X,X,
+Urdica sp.,Forbs,X,,,Forbs,X,X,X,
+Verbesina occidentalis,Forbs,Native,,100815,Forbs,Asteraceae,Dicot,Perennial,
+Veronica sp.,Forbs,X,,,Forbs,Scrophulariaceae,Dicot,X,
+Vetch,Legumes,X,,,Forbs,Cuscutaceae,Dicot,Perennial,
+Vetch-long black pods #1,Legumes,X,,,Legumes,X,X,X,
+Vetch-short brown pods #2 ,Legumes,X,,,Legumes,X,X,X,
+Vitis sp.,Woody ,X,,,Woody,Vitaceae,Dicot,X,
