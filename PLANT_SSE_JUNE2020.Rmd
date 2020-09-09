@@ -260,7 +260,7 @@ plant_tidy %>% filter(Max_height_cm >0)%>%
   group_by(Treat, Year, Species, Max_height_cm)%>%
   summarise_at(c("cover"), mean) %>%
   ggplot +
-  geom_point(aes(x= Max_height_cm, y =cover, fill=Treat), pch=21)+
+  geom_point(aes(x= Max_height_cm, y =log10(cover), fill=Treat), pch=21)+
   rita_theme+facet_wrap(~Year)+
   guides(fill=FALSE)
 
@@ -1097,7 +1097,9 @@ RM MANOVA 4 groups as vectors in MANOVA
 ###########################################################################################################
 # repeated measures manova
 
-plant_SSE$total_cover <- rowSums(plant_SSE[,112:118]) 
+plant_SSE$total_cover <- rowSums(plant_SSE[,112:117]) 
+max(plant_SSE$total_cover)
+min(plant_SSE$total_cover)
 plant_SSE <- plant_SSE %>% mutate(forb_relative = Forbs/total_cover,
                                   C3_relative = C3/total_cover,
                                   C4_relative = C4/total_cover,
@@ -1158,11 +1160,11 @@ FORBS ANOVA
 #############################################################################################################
 ##### FORBS
 ###########################################################################################################
-forbs_anova <- aov(Forbs ~ Year * Treat + Error(Plot/Year), plant_SSE)
+forbs_anova <- aov(forb_relative ~ Year * Treat + Error(Plot/Year), plant_SSE)
 summary(forbs_anova)
 # using car package 
-forb_emm <- emmeans(forbs_anova, ~ Treat)
-pairs(forb_emm)
+#forb_emm <- emmeans(forbs_anova, ~ Treat)
+#pairs(forb_emm)
 forb_emm2 <- emmeans(forbs_anova, ~ Year)
 pairs(forb_emm2)
 ```
@@ -1208,6 +1210,7 @@ forb1 <-plant_SSE %>%
   # annotate("text", x = 2.90, y = 30, label = "ab", size=2) +  #19 always sprayed
   # annotate("text", x = 3.05, y = 35, label = "ab", size=2) +  #19 cr->p
   # annotate("text", x = 3.20, y = 20, label = "b", size=2)  #19 crp
+forb1
 
 ```
 
@@ -1217,16 +1220,23 @@ GRASSES ANOVA
 ###########################################################################################################
 ##### GRASSES 
 ###########################################################################################################
-Grasses_anova <- aov(Grasses ~ Year *Treat + Error(Plot/Year), plant_SSE)
-summary(Grasses_anova)
+#Grasses_anova <- aov(Grasses ~ Year *Treat + Error(Plot/Year), plant_SSE)
+
+C4_anova <- aov(C4_relative ~ Year *Treat + Error(Plot/Year), plant_SSE)
+summary(C4_anova)
+C3_anova <- aov(C3_relative ~ Year *Treat + Error(Plot/Year), plant_SSE)
+summary(C3_anova)
+
+c3_emm <- emmeans(C3_anova, ~ Year)
+pairs(c3_emm)
 # using car package 
-grass_emm <- emmeans(Grasses_anova, ~ Year)
-pairs(grass_emm)
+#grass_emm <- emmeans(Grasses_anova, ~ Year)
+#pairs(grass_emm)
 ```
 
 ```{r grasses graphic, echo=FALSE}
 dodge <- position_dodge(width = 0.50)
-grass1 <-plant_SSE %>% 
+grass <-plant_SSE %>% 
   group_by(Year, Treat)%>% 
   mutate(mean = mean(Grasses), std = sd(Grasses)) %>%
   ggplot(aes(x=Year, y = mean, group=Treat))+
@@ -1244,6 +1254,24 @@ grass1 <-plant_SSE %>%
   # annotate("text", x = 2, y = 130, label = "A", size=4) + #2018
   # annotate("text", x = 3, y = 120, label = "B", size=4)   #2019
 
+C3_graphic <-plant_SSE %>% 
+  group_by(Year, Treat)%>% 
+  mutate(mean = mean(C3_relative), std = sd(C3_relative)) %>%
+  ggplot(aes(x=Year, y = mean, group=Treat))+
+  geom_point(aes(x=Year, y = C3_relative, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
+  geom_errorbar(aes(ymin=mean - std, ymax=mean + std),position=dodge, width=0.1) +
+  geom_point(aes(x=Year, y =mean, fill=Treat), 
+             pch=21, size=2.75, position=dodge)+
+  rita_theme+
+  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP")) +
+   guides(color=FALSE, fill=FALSE) +
+   labs(x = "",  y = "C3 grass cover") +
+   annotate("text", x = 1, y = 1.2, label = "A", size=4) + #2017
+   annotate("text", x = 2, y = 1, label = "C", size=4) + #2018
+   annotate("text", x = 3, y = 1.1, label = "B", size=4)   #2019
+
 ```
 
 
@@ -1251,9 +1279,9 @@ grass1 <-plant_SSE %>%
 dodge <- position_dodge(width = 0.50)
 legumes1 <-plant_SSE %>% 
   group_by(Year, Treat)%>% 
-  mutate(mean = mean(Legumes), std = sd(Legumes)) %>%
+  mutate(mean = mean(legume_relative), std = sd(legume_relative)) %>%
   ggplot(aes(x=Year, y = mean, group=Treat))+
-  geom_point(aes(x=Year, y = Legumes, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
+  geom_point(aes(x=Year, y = legume_relative, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
   geom_errorbar(aes(ymin=mean - std, ymax=mean + std),position=dodge, width=0.1) +
   geom_point(aes(x=Year, y =mean, fill=Treat), 
              pch=21, size=2.75, position=dodge)+
@@ -1266,6 +1294,7 @@ legumes1 <-plant_SSE %>%
   # annotate("text", x = 1, y = 130, label = "A", size=4) + #2017
   # annotate("text", x = 2, y = 130, label = "A", size=4) + #2018
   # annotate("text", x = 3, y = 120, label = "B", size=4)   #2019
+legumes1
 
 ```
 WOODY ANOVA 
@@ -1274,7 +1303,7 @@ WOODY ANOVA
 ###########################################################################################################
 ##### WOODY 
 ###########################################################################################################
-Woody_anova <- aov(Woody ~ Year *Treat + Error(Plot/Year), plant_SSE)
+Woody_anova <- aov(woody_relative ~ Year *Treat + Error(Plot/Year), plant_SSE)
 summary(Woody_anova)
 # using car package 
 woody_emm <- emmeans(Woody_anova, ~ Year)
@@ -1301,6 +1330,7 @@ woody1 <-plant_SSE %>%
   # annotate("text", x = 1, y = 40, label = "A", size=4) + #2017
   # annotate("text", x = 2, y = 40, label = "A", size=4) + #2018
   # annotate("text", x = 3, y = 50, label = "B", size=4)   #2019
+woody1
 
 ```
 
