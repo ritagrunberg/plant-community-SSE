@@ -253,6 +253,14 @@ names(plant_community_disease)[names(plant_community_disease) == "Schedonorus ar
 
 #integrate with data 
 plant_group_etc <- merge(plant_community_disease, plant_g_wide, by =c("Plot", "Year", "Treat"))
+
+charles_list <- plant_tidy %>%
+  group_by(Species) %>% 
+  filter (sum(cover)>0) %>%
+  group_by(Species, Max_height_cm, Origin, Growth) %>%
+  summarise_at(c("cover"), max)
+
+write.csv(charles_list, 'plant_height_SSE.csv')
 ```
 
 ```{r plant_height}
@@ -264,37 +272,88 @@ plant_tidy %>% filter(Max_height_cm >0)%>%
   rita_theme+facet_wrap(~Year)+
   guides(fill=FALSE)
 
+#jpeg(file="plant_height_figure.jpeg", width = 250, height = 180, units = 'mm', res = 300)
 plant_tidy %>% filter(Max_height_cm >0)%>%
-  group_by(Treat, Year, Species, Max_height_cm)%>%
+  group_by(Treat, Plot, Year, Species, Max_height_cm)%>%
   summarise_at(c("cover"), mean) %>%
   filter(cover >0)%>%
-  ggplot +
-  geom_histogram(aes(x=Max_height_cm, fill=Treat))+
-  rita_theme+facet_wrap(~Year*Treat)+
+ # filter(cover <76)%>%
+  #filter(Max_height_cm = 65.8)%>% # fescue 
+  ggplot(aes(x=Max_height_cm, y = log10(cover), fill=Treat)) +
+  geom_point(aes(x=Max_height_cm, y = log10(cover), fill=Treat), pch=21, size=2)+
+  #geom_bar(stat = "identity")+
+  #rita_theme+
+  theme_bw()+
+  facet_wrap(~Year*Treat, ncol=4)+
+  geom_vline(xintercept = 65.8, lwd=1, lty=2)+
   scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP"))+
-  labs(x="Max plant height (cm) data from Wilfahrt 2020 Supp",  y="# Taxa")+
-  geom_vline(xintercept = 65.8)+
-  guides(fill=FALSE)
+  labs(x="Max plant height (cm) data from Wilfahrt 2020 Supp",  y="log10 % cover")
+#guides(fill=FALSE, color=FALSE)
+#dev.off()
 
 plant_tidy %>% filter(Max_height_cm >0)%>%
   group_by(Treat, Year, Species, Max_height_cm)%>%
   summarise_at(c("cover"), mean) %>%
   filter(cover >0)%>%
-  filter(Max_height_cm < 65)%>%
-  ggplot(aes(x=Max_height_cm, y = log10(cover), fill=Treat)) +
-  geom_point(aes(x=Max_height_cm, y = log10(cover), fill=Treat), pch=21, size=3)+
-  #geom_bar(stat = "identity")+
-  #rita_theme+
-  theme_bw()+
-  facet_wrap(~Year)+
+  filter(cover <76)%>%
+  ggplot +
+  geom_histogram(aes(x=Max_height_cm, fill=Treat), bins=10)+
+  rita_theme+facet_wrap(~Year*Treat)+
   scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP"))+
-  labs(x="Max plant height (cm) data from Wilfahrt 2020 Supp",  y="% cover")+
-  geom_vline(xintercept = 65.8) #+
-  #guides(fill=FALSE, color=FALSE)
+  labs(x="Max plant height (cm) data from Wilfahrt 2020 Supp",  y="# Taxa")+
+  geom_vline(xintercept = 65.8, lwd=1, lty=2)+
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=1))+ # add black square panel around graphic
+  guides(fill=FALSE)
+```
+
+```{r change_height}
+plant_change <-plant_tidy %>% filter(Max_height_cm >0)%>%
+  group_by(Treat, Plot, Year, Species, Max_height_cm)%>%
+  summarise_at(c("cover"), mean) %>%
+  arrange(Year)%>%
+  ungroup()%>%
+  mutate(change_17 = cover - cover[Year == '2017'],
+         change_18 =cover - cover[Year == '2018'])
+
+pt1 <-plant_change %>% 
+  filter(Year == '2018') %>% 
+  filter(change_17 != 0) %>%
+  ggplot()+
+  annotate("rect", xmin = -70, xmax = 80, ymin = 64, ymax = 120,alpha = 0.1, fill="black")+
+  geom_vline(xintercept = 0, lwd=1, lty=1)+
+  geom_point(aes(x= change_17, y = Max_height_cm, fill=Treat), pch=21, size=2)+
+  scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP"))+
+ # geom_hline(yintercept = 65.8, lwd=1, lty=2)+
+#  geom_hline(yintercept = 65.8, lwd=1, lty=2)+
+  labs(x="Change in cover 2017 to 2018", y= "Max plant height (cm) data from Wilfahrt 2020 Supp")+
+  theme_bw()+facet_wrap(~Treat)
+
+pt2 <-plant_change %>% 
+  filter(Year == '2019') %>% 
+  filter(change_18 != 0) %>%
+  ggplot()+
+  annotate("rect", xmin = -80, xmax = 50, ymin = 64, ymax = 120,alpha = 0.1, fill="black")+
+  geom_vline(xintercept = 0, lwd=1, lty=1)+
+  geom_point(aes(x= change_18, y = Max_height_cm, fill=Treat), pch=21, size=2)+
+  scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP"))+
+  # geom_hline(yintercept = 65.8, lwd=1, lty=2)+
+  #  geom_hline(yintercept = 65.8, lwd=1, lty=2)+
+  labs(x="Change in cover 2018 to 2019", y= "Max plant height (cm) data from Wilfahrt 2020 Supp")+
+  theme_bw()+facet_wrap(~Treat)
+
+jpeg(file="plant_change_cover_height.jpeg", width = 300, height = 250, units = 'mm', res = 300)
+ggarrange(pt1, pt2, common.legend = TRUE)
+dev.off()
+
+
 ```
 
 ```{r parasite AUDPS for each species}
@@ -545,7 +604,7 @@ summary(disease_anova)
 
 ```{r parasite_spp, echo=FALSE}
 auc_parasite_all <- plant_SSE %>% 
-  gather(parasite, AUDPS_parasite, 116:118) %>% 
+  gather(parasite, AUDPS_parasite, 118:120) %>% 
   group_by(parasite, Treat, Year) %>%
   mutate(mean = mean(AUDPS_parasite), 
          std = sd(AUDPS_parasite)) %>%
@@ -564,6 +623,9 @@ ggplot(auc_parasite_all, aes(x= Year, y=AUDPS_parasite, group=Treat)) +
   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP")) +
+  guides(fill=guide_legend("Treatment",  keywidth=0.12,
+                           keyheight=0.12, override.aes = list(shape=21),
+                           default.unit="inch"), color= FALSE)+
   #guides(fill=FALSE)+
   theme(panel.border = element_rect(colour = "black", fill=NA, size=1))+ # add black square panel around graphic
   facet_wrap(~parasite,  scales = 'free')
@@ -741,8 +803,14 @@ rich.treat.eta
 # post hoc
 sp_emm <- emmeans(sp_aov, ~ Treat)
 pairs(sp_emm)
+plot(emmeans(sp_aov, ~ Treat))
+
 sp_emm2 <- emmeans(sp_aov, ~ Year)
 pairs(sp_emm2)
+plot(emmeans(sp_aov, ~ Year))
+
+#plot(emmeans(sp_aov, ~ Treat+Year))
+
 ```
 
 ```{r richness lmer}
@@ -801,9 +869,9 @@ ggplot(data=trt_diversity, aes(x=Year, y = mean_sp, group=Treat))+
                            keyheight=0.12, override.aes = list(shape=21),
                            default.unit="inch"), color= FALSE)+
   ylim(c(1,14))+
-  annotate("text", x = 1, y = 10, label = "A", size=4) + #2017
-  annotate("text", x = 2, y = 13.5, label = "B", size=4) + #2018
-  annotate("text", x = 3, y = 10, label = "A", size=4) +  #2019
+  annotate("text", x = 1, y = 10, label = "B", size=4) + #2017
+  annotate("text", x = 2, y = 13.5, label = "A", size=4) + #2018
+  annotate("text", x = 3, y = 10, label = "C", size=4) +  #2019
   
   annotate("text", x = 0.70, y = 8.5, label = "a", size=2) + #17 never sprayed
   annotate("text", x = 0.90, y = 8.3, label = "b", size=2) +  #17 always sprayed
@@ -1028,6 +1096,12 @@ bio_emm <- emmeans(bio_aov, ~ Treat)
 pairs(bio_emm)
 bio_emm2 <- emmeans(bio_aov, ~ Year)
 pairs(bio_emm2)
+
+bio.year.eta <-(summary(bio_aov)[["Error: Plot:Year"]][[1]]["Year" , "F value"]*summary(bio_aov)[["Error: Plot:Year"]][[1]]["Year" , "Df"])/(summary(bio_aov)[["Error: Plot:Year"]][[1]]["Year" , "F value"]*summary(bio_aov)[["Error: Plot:Year"]][[1]]["Year" , "Df"]+summary(bio_aov)[["Error: Plot:Year"]][[1]]["Residuals" , "Df"])
+bio.year.eta
+
+bio.treat.eta <-(summary(bio_aov)[["Error: Plot"]][[1]]["Treat" , "F value"]*summary(bio_aov)[["Error: Plot"]][[1]]["Treat" , "Df"])/(summary(bio_aov)[["Error: Plot"]][[1]]["Treat" , "F value"]*summary(bio_aov)[["Error: Plot"]][[1]]["Treat" , "Df"]+summary(bio_aov)[["Error: Plot"]][[1]]["Residuals" , "Df"])
+bio.treat.eta
 ```
 
 Total plant biomass increased over time (p < 0.0001) and was also impacted by fungicide treatment (p < 0.0001). Plots more frequently exposed to fungicide (always sprayed and CRP) had the highest biomass and biomass was lowest in plots never sprayed with fungicide. 
@@ -1067,24 +1141,24 @@ ggplot(data=biomass_plot, aes(x=Year, y = mean_bio, group=Treat))+
                     labels = c("Never", "Always", "CR->P", "CRP")) +
   guides(color=FALSE, fill=FALSE)+
   labs(x = "",  y = bquote('log'[10]~' plant biomass (g '~m^-2*')'))+
-  annotate("text", x = 1, y = 3.35, label = "A", size=4) + #2017
-  annotate("text", x = 2, y = 3.35, label = "A", size=4) + #2018
-  annotate("text", x = 3, y = 3.6, label = "B", size=4) +  #2019
+  annotate("text", x = 1, y = 3.35, label = "B", size=4) + #2017
+  annotate("text", x = 2, y = 3.35, label = "B", size=4) + #2018
+  annotate("text", x = 3, y = 3.6, label = "A", size=4) +  #2019
   
-  annotate("text", x = 0.85, y = 3.1, label = "a", size=2) + #17 never sprayed
-  annotate("text", x = 0.95, y = 3.2, label = "b", size=2) +  #17 always sprayed
-  annotate("text", x = 1.05, y = 3.15, label = "c", size=2) +  #17 cr->p
-  annotate("text", x = 1.15, y = 3.2, label = "b", size=2) +  #17 crp
+  annotate("text", x = 0.85, y = 3.1, label = "c", size=2) + #17 never sprayed
+  annotate("text", x = 0.95, y = 3.2, label = "a", size=2) +  #17 always sprayed
+  annotate("text", x = 1.05, y = 3.15, label = "b", size=2) +  #17 cr->p
+  annotate("text", x = 1.15, y = 3.2, label = "a", size=2) +  #17 crp
   
-  annotate("text", x = 1.85, y = 3.0, label = "a", size=2) + #18 never sprayed
-  annotate("text", x = 1.95, y = 3.22, label = "b", size=2) +  #18 always sprayed
-  annotate("text", x = 2.05, y = 3.15, label = "c", size=2) +  #18 cr->p
-  annotate("text", x = 2.15, y = 3.22, label = "b", size=2) +  #18 crp
+  annotate("text", x = 1.85, y = 3.0, label = "c", size=2) + #18 never sprayed
+  annotate("text", x = 1.95, y = 3.22, label = "a", size=2) +  #18 always sprayed
+  annotate("text", x = 2.05, y = 3.15, label = "b", size=2) +  #18 cr->p
+  annotate("text", x = 2.15, y = 3.22, label = "a", size=2) +  #18 crp
   
-  annotate("text", x = 2.85, y = 3.3, label = "a", size=2) + #19 never sprayed
-  annotate("text", x = 2.95, y = 3.45, label = "b", size=2) +  #19 always sprayed
-  annotate("text", x = 3.05, y = 3.3, label = "c", size=2) +  #19 cr->p
-  annotate("text", x = 3.15, y = 3.45, label = "b", size=2)  #19 crp
+  annotate("text", x = 2.85, y = 3.3, label = "c", size=2) + #19 never sprayed
+  annotate("text", x = 2.95, y = 3.45, label = "a", size=2) +  #19 always sprayed
+  annotate("text", x = 3.05, y = 3.3, label = "b", size=2) +  #19 cr->p
+  annotate("text", x = 3.15, y = 3.45, label = "a", size=2)  #19 crp
 #dev.off()
 ```
 
@@ -1348,7 +1422,7 @@ We also assessed whether fungicide treatment influenced patterns in plant commun
 set.seed(1234567) #make sure to set seed to get the same result, this is a permutation based method 
 # create community matrix and envi data matrix 
 plant<-plant_SSE[,8:105] # makes new matrix with community data (columns 2-100)
-plot<-plant_SSE[,c(1:5,111)]# makes new matrix with envi data (columns 1-3)
+plot<-plant_SSE[,c(1:5,110:111,118:120)]# makes new matrix with envi data (columns 1-3)
 plot$Year <- as.factor(plot$Year)
 # more formatting
 # remove columns 
@@ -1422,8 +1496,8 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 set.seed(1234567) #make sure to set seed to get the same result, this is a permutation based method 
 #ordO<-metaMDS(plant.2, distance="bray", trymax = 2000, autotransform=FALSE) # not transformed 
 #ordO
-#fit<-envfit(ordO, plot.2[,],perm=999)#fits vectors
-#fit # prints coordinates for host vectors and test of sig
+fit<-envfit(ordO, plot.2[,6:10],perm=999)#fits vectors
+fit # prints coordinates for host vectors and test of sig
 
 plant_bc.0<-adonis(formula=plant.2 ~ Treat + Year, data=plot.2, permutations=999, method="bray")
 plant_bc.0
@@ -1453,6 +1527,16 @@ Two convergent solutions found after 634 tries
 Scaling: centring, PC rotation, halfchange scaling 
 Species: expanded scores based on ‘plant.2’ 
 
+####################################################################################
+ENVI FIT FUNCTION
+***VECTORS
+
+                  NMDS1    NMDS2     r2 Pr(>r)  
+log_biomass     0.98973  0.14295 0.0405  0.018 *
+AUDPS_parasite -0.98023 -0.19785 0.0145  0.238  
+Anthracnose    -0.91150 -0.41129 0.0153  0.209  
+Rhiz           -0.68872  0.72503 0.0024  0.795  
+Rust           -0.78692 -0.61705 0.0219  0.102  
 ####################################################################################
 Call:
 adonis(formula = plant.2 ~ Treat + Year, data = plot.2, permutations = 999,      method = "bray", strata = plot.2$Plot) 
@@ -1490,7 +1574,7 @@ Residuals  180   10.6203 0.05900         0.86257
 Total      191   12.3123                 1.00000           
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
-
+########################################################################################
 
 ```{r permanova forbs}
 # set.seed(1234567) #make sure to set seed to get the same result, this is a permutation based method 
@@ -1600,25 +1684,28 @@ ggplot(permanvova_effects, aes(x=plant_group, y = R2, fill=Variable, group=Varia
 Plant community structure differed among fungicide treatments and across years. However, fungicide treatment explained little variation in patterns of plant cover (PERMANOVA on Bray-Curtis distances, Treat: Pseudo-F = 2.38, p =0.001, R2=0.03) and composition (PERMANOVA on Jaccard distances, Treat: Pseudo-F = 1.76, p =0.003, R2=0.02). As expected, year explained more variation in plant cover (PERMANOVA on Bray-Curtis distances, Year: Pseudo-F = 14.17, p =0.001, R2=0.13) and composition (PERMANOVA on Jaccard distances, Year: Pseudo-F = 16.43 p =0.001, R2=0.15).   
 
 ```{r NMDS bray curtis}
-#scrs17 <-scores(ordO, display = "sites", "species")
-#trt_groups <- (c( 'Treat', 'Year')) 
+scrs17 <-scores(ordO, display = "sites", "species")
+trt_groups <- (c( 'Treat', 'Year')) 
 
 #extract info for plotting purposes 
-#hcoordO<-as.data.frame(scores(ordO, display="sites")) #extracts coordinates for plot
-#pcoordO<-as.data.frame(scores(ordO, display="species")) #extracts coordinates for plant vectors
-#pcoordO$plant_sp<- rownames(pcoordO, "species")
+hcoordO<-as.data.frame(scores(ordO, display="sites")) #extracts coordinates for plot
+pcoordO<-as.data.frame(scores(ordO, display="species")) #extracts coordinates for plant vectors
+pcoordO$plant_sp<- rownames(pcoordO, "species")
+pcoordO <- pcoordO %>%   
+  separate(col=plant_sp, into = c("Genus", "species"))
+#write.csv(pcoordO, 'plantsp_coordinates_BC.csv')
 
-#plant_all <- bind_cols(plot.2, hcoordO)
+plant_all <- bind_cols(plot.2, hcoordO)
 #write.csv(plant_all, "NMDS_plant_community_SSE.csv")
 
 #should have data for 3 yrs and 4 treatments 
 #calculating centroids 
-#cent <-aggregate(scrs17 ~ Treat + Year, data = plant_all, FUN = "mean")
-#se <- function(z)sd(z)/sqrt(length(z)) # function to calculate std.err
-#ci95 <- function(z) qt(0.025,df=length(z)-1, lower.tail=F)* sd(z)/sqrt(length(z)) 
-#cent.95<- aggregate(scrs17 ~ Treat + Year,data=plant_all,ci95)
-#cent.SE<- aggregate(scrs17 ~ Treat + Year,data=plant_all,se)
-#cent <- merge(cent, cent.SE, by =c("Treat", "Year"))
+cent <-aggregate(scrs17 ~ Treat + Year, data = plant_all, FUN = "mean")
+se <- function(z)sd(z)/sqrt(length(z)) # function to calculate std.err
+ci95 <- function(z) qt(0.025,df=length(z)-1, lower.tail=F)* sd(z)/sqrt(length(z)) 
+cent.95<- aggregate(scrs17 ~ Treat + Year,data=plant_all,ci95)
+cent.SE<- aggregate(scrs17 ~ Treat + Year,data=plant_all,se)
+cent <- merge(cent, cent.SE, by =c("Treat", "Year"))
 #write.csv(cent, "NMDS_centroids_plant_community_SSE.csv")
 
 topp<-max(cent[,5:6]) #determines maximum and minimum values for the plot axes
@@ -1673,7 +1760,7 @@ ggplot(cent, aes(x= NMDS1.x, y=NMDS2.x))+
                      xmax=NMDS1.x +NMDS1.y),height=0.05)+
   #geom_path(aes(color=Treat), lwd=0.5)+
   geom_point(size =2.5, aes(fill=Treat, shape=Year))+
-  # geom_text(aes(x=NMDS1,y=NMDS2, label=Year), fontface =2, colour = "black" , size=1) + # label year
+  geom_text(data= pcoordO, aes(x=NMDS1,y=NMDS2, label=Genus), fontface =2, colour = "black" , size=1) + # label year
   xlab("NMDS 1 (B-C)") +
   ylab("NMDS 2 (B-C)") +
   xlim(c( -0.28, 0.52)) +
