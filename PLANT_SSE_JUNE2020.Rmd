@@ -243,6 +243,16 @@ plant_growth <- plant_tidy  %>%
   mutate(Year = as.factor(Year),
          Treat = as.factor(Treat))
 
+plant_invasive <- plant_tidy  %>% 
+ # group_by(Year, Treat, Plot, Group) %>%
+  group_by(Year, Treat, Plot, Origin) %>% 
+  summarise_at(c("cover"), sum) %>% 
+  ungroup()%>%
+  mutate(Year = as.factor(Year),
+         Treat = as.factor(Treat)) %>%
+  spread(Origin, cover) %>% 
+  replace(is.na(.), 0)
+
 #covert to wide df
 plant_g_wide <- plant_growth %>% 
   spread(Growth, cover) %>% 
@@ -252,7 +262,8 @@ plant_g_wide <- plant_growth %>%
 names(plant_community_disease)[names(plant_community_disease) == "Schedonorus arundinaceus"] <- "Schedonorus_arundinaceus"
 
 #integrate with data 
-plant_group_etc <- merge(plant_community_disease, plant_g_wide, by =c("Plot", "Year", "Treat"))
+plant_group_etc_one <- merge(plant_community_disease, plant_g_wide, by =c("Plot", "Year", "Treat"))
+plant_group_etc <- merge(plant_group_etc_one, plant_invasive, by =c("Plot", "Year", "Treat"))
 
 charles_list <- plant_tidy %>%
   group_by(Species) %>% 
@@ -260,7 +271,7 @@ charles_list <- plant_tidy %>%
   group_by(Species, Max_height_cm, Origin, Growth) %>%
   summarise_at(c("cover"), max)
 
-write.csv(charles_list, 'plant_height_SSE.csv')
+#write.csv(charles_list, 'plant_height_SSE.csv')
 ```
 
 ```{r plant_height}
@@ -349,9 +360,9 @@ pt2 <-plant_change %>%
   labs(x="Change in cover 2018 to 2019", y= "Max plant height (cm) data from Wilfahrt 2020 Supp")+
   theme_bw()+facet_wrap(~Treat)
 
-jpeg(file="plant_change_cover_height.jpeg", width = 300, height = 250, units = 'mm', res = 300)
+#jpeg(file="plant_change_cover_height.jpeg", width = 300, height = 250, units = 'mm', res = 300)
 ggarrange(pt1, pt2, common.legend = TRUE)
-dev.off()
+#dev.off()
 
 
 ```
@@ -604,7 +615,7 @@ summary(disease_anova)
 
 ```{r parasite_spp, echo=FALSE}
 auc_parasite_all <- plant_SSE %>% 
-  gather(parasite, AUDPS_parasite, 118:120) %>% 
+  gather(parasite, AUDPS_parasite, 121:123) %>% 
   group_by(parasite, Treat, Year) %>%
   mutate(mean = mean(AUDPS_parasite), 
          std = sd(AUDPS_parasite)) %>%
@@ -1178,17 +1189,57 @@ plant_SSE <- plant_SSE %>% mutate(forb_relative = Forbs/total_cover,
                                   C3_relative = C3/total_cover,
                                   C4_relative = C4/total_cover,
                                   woody_relative = Woody/total_cover,
+                                  grass_relative = C3_relative + C4_relative,
                                   legume_relative = Legumes/total_cover,
+                                  native_relative = Native/total_cover,
+                                  exotic_relative = Exotic/total_cover,
                                   Year= as.factor(Year)
                                   )
 
-group_manova <- manova(cbind(forb_relative, C3_relative, C4_relative, woody_relative) ~ Treat * Year + Error(Plot/Year), 
+group_manova <- manova(cbind(forb_relative,  grass_relative, woody_relative) ~ Treat * Year + Error(Plot/Year), 
                             contrasts = list(Treat =contr.sum, 
                                              Year = contr.sum),
                             data= plant_SSE)
 summary(group_manova, test = c( "Wilks"))
 ```
-```{r group cover graphic}
+```{r exotic or invasive}
+plant_SSE %>% 
+  group_by(Year, Treat)%>% 
+  mutate(mean = mean(native_relative), std = sd(native_relative)) %>%
+  ggplot(aes(x=Year, y = mean, group=Treat))+
+  geom_point(aes(x=Year, y =native_relative, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
+  geom_errorbar(aes(ymin=mean - std, ymax=mean + std),position=dodge, width=0.1) +
+  geom_point(aes(x=Year, y =mean, fill=Treat), 
+             pch=21, size=2.75, position=dodge)+
+  rita_theme+
+  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP")) +
+   guides(color=FALSE, fill=FALSE) +
+   labs(x = "",  y = "Native plant cover")
+
+native_anova <- aov(native_relative ~ Year * Treat + Error(Plot/Year), plant_SSE)
+summary(native_anova)
+# using car package 
+
+plant_SSE %>% 
+  group_by(Year, Treat)%>% 
+  mutate(mean = mean(exotic_relative), std = sd(exotic_relative)) %>%
+  ggplot(aes(x=Year, y = mean, group=Treat))+
+  geom_point(aes(x=Year, y =exotic_relative, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
+  geom_errorbar(aes(ymin=mean - std, ymax=mean + std),position=dodge, width=0.1) +
+  geom_point(aes(x=Year, y =mean, fill=Treat), 
+             pch=21, size=2.75, position=dodge)+
+  rita_theme+
+  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP")) +
+   guides(color=FALSE, fill=FALSE) +
+   labs(x = "",  y = "Exotic plant cover")
+
+```
+
+```{r c3 and c4 cover graphic}
 
 plant_SSE %>% 
   group_by(Year, Treat)%>% 
@@ -1237,8 +1288,9 @@ FORBS ANOVA
 forbs_anova <- aov(forb_relative ~ Year * Treat + Error(Plot/Year), plant_SSE)
 summary(forbs_anova)
 # using car package 
-#forb_emm <- emmeans(forbs_anova, ~ Treat)
-#pairs(forb_emm)
+
+forb_emm <- emmeans(forbs_anova, ~ Treat)
+pairs(forb_emm)
 forb_emm2 <- emmeans(forbs_anova, ~ Year)
 pairs(forb_emm2)
 ```
@@ -1312,9 +1364,9 @@ pairs(c3_emm)
 dodge <- position_dodge(width = 0.50)
 grass <-plant_SSE %>% 
   group_by(Year, Treat)%>% 
-  mutate(mean = mean(Grasses), std = sd(Grasses)) %>%
+  mutate(mean = mean(grass_relative), std = sd(grass_relative)) %>%
   ggplot(aes(x=Year, y = mean, group=Treat))+
-  geom_point(aes(x=Year, y = Grasses, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
+  geom_point(aes(x=Year, y = grass_relative, group=Treat, fill=Treat), pch=21, position = dodge, alpha=0.25)+
   geom_errorbar(aes(ymin=mean - std, ymax=mean + std),position=dodge, width=0.1) +
   geom_point(aes(x=Year, y =mean, fill=Treat), 
              pch=21, size=2.75, position=dodge)+
@@ -1327,6 +1379,7 @@ grass <-plant_SSE %>%
   # annotate("text", x = 1, y = 130, label = "A", size=4) + #2017
   # annotate("text", x = 2, y = 130, label = "A", size=4) + #2018
   # annotate("text", x = 3, y = 120, label = "B", size=4)   #2019
+grass
 
 C3_graphic <-plant_SSE %>% 
   group_by(Year, Treat)%>% 
