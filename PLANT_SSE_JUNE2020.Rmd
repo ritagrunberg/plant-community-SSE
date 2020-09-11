@@ -38,6 +38,7 @@ plotbiomass_2018 <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cove
 plotbiomass_2019 <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cover_analysis/data/2019PlotBiomass_SSprayExp.csv")
 SSE_prevalence_overall <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/SSE_prevalence_overall.csv") #overall prevalence 
 SSE_prevalence_spp <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/SSE_prevalence_spp.csv")
+pcoordO <- read_csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/plantsp_coordinates_BC.csv")
 #prevalence for each parasite spp. 
 ```
 
@@ -321,6 +322,18 @@ plant_tidy %>% filter(Max_height_cm >0)%>%
   geom_vline(xintercept = 65.8, lwd=1, lty=2)+
   theme(panel.border = element_rect(colour = "black", fill=NA, size=1))+ # add black square panel around graphic
   guides(fill=FALSE)
+
+
+plant_tidy %>% 
+  filter(Species %in% c("Poa pratensis", "Steinchisma hians", "Rosa multiflora", "Rubus argutus", "Verbesina occidentalis")) %>%
+  group_by(Treat, Year, Species)%>%
+  summarise_at(c("cover"), mean) %>%
+  ggplot()+
+  geom_point(aes(y=Species, x = log10(cover), fill=Treat), size=2.5, pch=21)+
+    scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP"))+
+  facet_wrap(~Year)+ theme_bw()
 ```
 
 ```{r change_height}
@@ -1739,28 +1752,28 @@ ggplot(permanvova_effects, aes(x=plant_group, y = R2, fill=Variable, group=Varia
 Plant community structure differed among fungicide treatments and across years. However, fungicide treatment explained little variation in patterns of plant cover (PERMANOVA on Bray-Curtis distances, Treat: Pseudo-F = 2.38, p =0.001, R2=0.03) and composition (PERMANOVA on Jaccard distances, Treat: Pseudo-F = 1.76, p =0.003, R2=0.02). As expected, year explained more variation in plant cover (PERMANOVA on Bray-Curtis distances, Year: Pseudo-F = 14.17, p =0.001, R2=0.13) and composition (PERMANOVA on Jaccard distances, Year: Pseudo-F = 16.43 p =0.001, R2=0.15).   
 
 ```{r NMDS bray curtis}
-scrs17 <-scores(ordO, display = "sites", "species")
-trt_groups <- (c( 'Treat', 'Year')) 
+#scrs17 <-scores(ordO, display = "sites", "species")
+#trt_groups <- (c( 'Treat', 'Year')) 
 
 #extract info for plotting purposes 
-hcoordO<-as.data.frame(scores(ordO, display="sites")) #extracts coordinates for plot
-pcoordO<-as.data.frame(scores(ordO, display="species")) #extracts coordinates for plant vectors
-pcoordO$plant_sp<- rownames(pcoordO, "species")
-pcoordO <- pcoordO %>%   
-  separate(col=plant_sp, into = c("Genus", "species"))
+#hcoordO<-as.data.frame(scores(ordO, display="sites")) #extracts coordinates for plot
+#pcoordO<-as.data.frame(scores(ordO, display="species")) #extracts coordinates for plant vectors
+#pcoordO$plant_sp<- rownames(pcoordO, "species")
+#pcoordO <- pcoordO %>%   
+ # separate(col=plant_sp, into = c("Genus", "species"))
 #write.csv(pcoordO, 'plantsp_coordinates_BC.csv')
 
-plant_all <- bind_cols(plot.2, hcoordO)
+#plant_all <- bind_cols(plot.2, hcoordO)
 #write.csv(plant_all, "NMDS_plant_community_SSE.csv")
 
 #should have data for 3 yrs and 4 treatments 
 #calculating centroids 
-cent <-aggregate(scrs17 ~ Treat + Year, data = plant_all, FUN = "mean")
-se <- function(z)sd(z)/sqrt(length(z)) # function to calculate std.err
-ci95 <- function(z) qt(0.025,df=length(z)-1, lower.tail=F)* sd(z)/sqrt(length(z)) 
-cent.95<- aggregate(scrs17 ~ Treat + Year,data=plant_all,ci95)
-cent.SE<- aggregate(scrs17 ~ Treat + Year,data=plant_all,se)
-cent <- merge(cent, cent.SE, by =c("Treat", "Year"))
+#cent <-aggregate(scrs17 ~ Treat + Year, data = plant_all, FUN = "mean")
+#se <- function(z)sd(z)/sqrt(length(z)) # function to calculate std.err
+#ci95 <- function(z) qt(0.025,df=length(z)-1, lower.tail=F)* sd(z)/sqrt(length(z)) 
+#cent.95<- aggregate(scrs17 ~ Treat + Year,data=plant_all,ci95)
+#cent.SE<- aggregate(scrs17 ~ Treat + Year,data=plant_all,se)
+#cent <- merge(cent, cent.SE, by =c("Treat", "Year"))
 #write.csv(cent, "NMDS_centroids_plant_community_SSE.csv")
 
 topp<-max(cent[,5:6]) #determines maximum and minimum values for the plot axes
