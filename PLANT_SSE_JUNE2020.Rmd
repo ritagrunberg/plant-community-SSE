@@ -288,19 +288,21 @@ plant_tidy %>% filter(Max_height_cm >0)%>%
   group_by(Treat, Plot, Year, Species, Max_height_cm)%>%
   summarise_at(c("cover"), mean) %>%
   filter(cover >0)%>%
+  filter(Max_height_cm != 65.8) %>%
  # filter(cover <76)%>%
   #filter(Max_height_cm = 65.8)%>% # fescue 
   ggplot(aes(x=Max_height_cm, y = log10(cover), fill=Treat)) +
+  annotate("rect", xmin = 64, xmax = 120, ymin = -1, ymax = 2, alpha = 0.35, fill="grey")+
   geom_point(aes(x=Max_height_cm, y = log10(cover), fill=Treat), pch=21, size=2)+
   #geom_bar(stat = "identity")+
   #rita_theme+
   theme_bw()+
   facet_wrap(~Year*Treat, ncol=4)+
-  geom_vline(xintercept = 65.8, lwd=1, lty=2)+
+  #geom_vline(xintercept = 65.8, lwd=1, lty=2)+
   scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP"))+
-  labs(x="Max plant height (cm) data from Wilfahrt 2020 Supp",  y="log10 % cover")
+  labs(x="Max plant height (cm) data from Wilfahrt 2020 Supp",  y="log (% cover)")
 #guides(fill=FALSE, color=FALSE)
 #dev.off()
 
