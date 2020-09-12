@@ -835,8 +835,8 @@ sp_emm2 <- emmeans(sp_aov, ~ Year)
 pairs(sp_emm2)
 plot(emmeans(sp_aov, ~ Year))
 
-#plot(emmeans(sp_aov, ~ Treat+Year))
-
+sp_emm3 <- emmeans(sp_aov, ~ Year*Treat)
+sprichout <-data.frame(sp_emm3)
 ```
 
 ```{r richness lmer}
@@ -875,14 +875,14 @@ err_stdev_sp <- aes(ymin=mean_sp - sd_sp, ymax=mean_sp + sd_sp)
 dodge <- position_dodge(width = 0.75)
 
 #jpeg(file="plant_richness_SSE.jpeg",width = 90, height = 90,  units = 'mm',  res = 300) 
-ggplot(data=trt_diversity, aes(x=Year, y = mean_sp, group=Treat))+
+ggplot(data=trt_diversity, aes(x=Year, y = (mean_sp), group=Treat))+
   rita_theme+
-  geom_point(aes(x=Year, y = sp_rich, group=Treat, fill=Treat), pch=21, data=plant_SSE, 
+  geom_point(aes(x=Year, y = (sp_rich), group=Treat, fill=Treat), pch=21, data=plant_SSE, 
              position=position_jitterdodge(dodge.width=0.75,  jitter.width = 0.3), alpha=0.35, size = 1)+
   # geom_violin(aes(x=Year, y = sp_rich, group=Treat, fill=Treat),  data=plant_SSE, alpha=0.35)+
-  geom_errorbar(err_stdev_sp, position=dodge, width=0.1) +
-  geom_point(aes(x=Year, y =mean_sp, fill=Treat), 
-             pch=21, size=2.75, position=dodge, data=trt_diversity)+
+ # geom_errorbar(err_stdev_sp, position=dodge, width=0.1) +
+  geom_point(aes(x=Year, y = (10^(emmean)), fill=Treat), 
+             pch=21, size=2.75, position=dodge, data=sprichout)+
   scale_color_manual(values=c('#ffeda0','#a1dab4','#41b6c4','#225ea8')) + 
   labs(x="", y="Richness") +
   theme(legend.title = element_text(size=7, face="bold"),
@@ -893,8 +893,8 @@ ggplot(data=trt_diversity, aes(x=Year, y = mean_sp, group=Treat))+
                     labels = c("Never", "Always", "CR->P", "CRP")) +
   guides(fill=guide_legend("Treatment",  keywidth=0.12,
                            keyheight=0.12, override.aes = list(shape=21),
-                           default.unit="inch"), color= FALSE)+
-  ylim(c(1,14))+
+                           default.unit="inch"), color= FALSE) +
+ # ylim(c(1,14))+
   annotate("text", x = 1, y = 10, label = "B", size=4) + #2017
   annotate("text", x = 2, y = 13.5, label = "A", size=4) + #2018
   annotate("text", x = 3, y = 10, label = "C", size=4) +  #2019
@@ -950,25 +950,9 @@ sp_emm2 <- emmeans(shan_aov, ~ Treat * Year)
 pairs(sp_emm2)
 # or for simple comparisons
 shannon_out<-data.frame(sp_emm2)
-#######
-# within year comparision 
-plant_SSE17 <-  plant_SSE%>%  
-  filter( Year == '2017') 
-shan_17 <- aov(hill_shannon~Treat, data =plant_SSE17)
-#TukeyHSD(shan_17, 'Treat')
-test_result.3.1 <- agricolae::HSD.test(shan_17, 'Treat', group = TRUE, console = TRUE)
+plot(emmeans(shan_aov, ~ Treat *Year))
 
-plant_SSE18 <-  plant_SSE%>%  
-  filter( Year == '2018') 
-shan_18 <- aov(hill_shannon~Treat, data =plant_SSE18)
-#TukeyHSD(shan_18, 'Treat')
-test_result.4 <- agricolae::HSD.test(shan_18, 'Treat', group = TRUE, console = TRUE)
-
-plant_SSE19 <-  plant_SSE%>% 
-  filter( Year == '2019') 
-shan_19 <- aov(hill_shannon~Treat, data =plant_SSE19)
-#TukeyHSD(shan_19, 'Treat')
-test_result.5 <- agricolae::HSD.test(shan_19, 'Treat', group = TRUE, console = TRUE)
+######
 
 ```
 
@@ -1023,6 +1007,7 @@ shannon <-ggplot(data=trt_hill, aes(x=Year, y = mean_shan, group=Treat))+
   annotate("text", x = 3.20, y = 3, label = "ab", size=2) +  #19 crp
   guides(fill=FALSE)
 
+shannon
 ```
 
 ```{r simpson hill numbers}
@@ -1044,16 +1029,6 @@ simp.interaction.eta
 simp_emm <- emmeans(simp_aov, ~ Treat*Year)
 pairs(simp_emm)
 
-simp_17 <- aov(hill_simpson~Treat, data =plant_SSE17)
-TukeyHSD(simp_17, 'Treat')
-
-simp_18 <- aov(hill_simpson~Treat, data =plant_SSE18)
-TukeyHSD(simp_18, 'Treat')
-test_result.6 <- agricolae::HSD.test(simp_18, 'Treat', group = TRUE, console = TRUE)
-
-simp_19 <- aov(hill_simpson~Treat, data =plant_SSE19)
-TukeyHSD(simp_19, 'Treat')
-test_result.7 <- agricolae::HSD.test(simp_19, 'Treat', group = TRUE, console = TRUE)
 ```
 
 Similarly, plant Shannon and Simpson hill diversity were affected by fungicide treatment (Treat: Shannon F = 8.53, p < 0.0001; Simpson F =4.27, p = 0 006). Importantly, when considering Shannon and Simpson diversity, there was a significant interaction between treatment and year (Treat*year: Shannon F =3.91, p = 0.001; Simpson F = 2.95, p = 0.009).
@@ -1101,6 +1076,8 @@ simpson<-ggplot(data=trt_hill, aes(x=Year, y = mean_simp,  group=Treat))+
   annotate("text", x = 3.05, y = 2.8, label = "ab", size=2) +  #19 cr->p
   annotate("text", x = 3.20, y = 2.8, label = "ab", size=2) #+  #19 crp
   #guides(fill=FALSE)
+
+simpson
 ```
 
 ```{r}
@@ -1231,12 +1208,21 @@ plant_SSE %>%
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP")) +
    guides(color=FALSE, fill=FALSE) +
-   labs(x = "",  y = "Native plant cover")
+   labs(x = "",  y = "Native plant cover")+
+  annotate("text", x = 1, y = 0.3, label = "C", size=4) + #2017
+  annotate("text", x = 2, y = 0.7, label = "A", size=4) + #2018
+  annotate("text", x = 3, y = 0.5, label = "B", size=4)   #2019
 
 native_anova <- aov(native_relative ~ Year * Treat + Error(Plot/Year), plant_SSE)
 summary(native_anova)
-# using car package 
 
+native_emm2 <- emmeans(native_anova, ~ Year)
+plot(emmeans(native_anova, ~ Year))
+pairs(native_emm2)
+# using car package 
+```
+
+```{r exotic cover}
 plant_SSE %>% 
   group_by(Year, Treat)%>% 
   mutate(mean = mean(exotic_relative), std = sd(exotic_relative)) %>%
@@ -1251,6 +1237,9 @@ plant_SSE %>%
                     labels = c("Never", "Always", "CR->P", "CRP")) +
    guides(color=FALSE, fill=FALSE) +
    labs(x = "",  y = "Exotic plant cover")
+
+exotic_anova <- aov(exotic_relative ~ Year * Treat + Error(Plot/Year), plant_SSE)
+summary(exotic_anova)
 
 ```
 
@@ -1508,14 +1497,13 @@ We also assessed whether fungicide treatment influenced patterns in plant commun
 
 ```{r permanova JAC}
 set.seed(1234567) #make sure to set seed to get the same result, this is a permutation based method 
-plant_jac.0<-adonis(formula=plant_pa ~ (Treat) + (Year) , data=plot.2, permutations=999, method="jaccard")
-plant_jac.0
-hist(plant_jac.0$f.perms, main="No strata", xlab="F permuted")
+#plant_jac.0<-adonis(formula=plant_pa ~ (Treat) + (Year) , data=plot.2, permutations=999, method="jaccard")
+#plant_jac.0
+#hist(plant_jac.0$f.perms, main="No strata", xlab="F permuted")
 
-
-plant_jac<-adonis(formula=plant_pa ~ (Treat) + (Year) , data=plot.2, strata =plot.2$Plot, permutations=999, method="jaccard")
-plant_jac
-hist(plant_jac$f.perms, main="Strata = plot", xlab="F permuted")
+#plant_jac<-adonis(formula=plant_pa ~ (Treat) + (Year) , data=plot.2, strata =plot.2$Plot, permutations=999, method="jaccard")
+#plant_jac
+#hist(plant_jac$f.perms, main="Strata = plot", xlab="F permuted")
 
 #plant_jac2<-adonis(formula=plant_pa ~  (Year) *Treat , data=plot.2, strata =plot.2$Plot, permutations=999, method="jaccard")
 #plant_jac2
@@ -1564,16 +1552,16 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 set.seed(1234567) #make sure to set seed to get the same result, this is a permutation based method 
 #ordO<-metaMDS(plant.2, distance="bray", trymax = 2000, autotransform=FALSE) # not transformed 
 #ordO
-fit<-envfit(ordO, plot.2[,6:10],perm=999)#fits vectors
-fit # prints coordinates for host vectors and test of sig
+#fit<-envfit(ordO, plot.2[,6:10],perm=999)#fits vectors
+#fit # prints coordinates for host vectors and test of sig
 
-plant_bc.0<-adonis(formula=plant.2 ~ Treat + Year, data=plot.2, permutations=999, method="bray")
-plant_bc.0
-hist(plant_bc.0$f.perms, main="No strata", xlab="F permuted")
+#plant_bc.0<-adonis(formula=plant.2 ~ Treat + Year, data=plot.2, permutations=999, method="bray")
+#plant_bc.0
+#hist(plant_bc.0$f.perms, main="No strata", xlab="F permuted")
 
-plant_bc<-adonis(formula=plant.2 ~ Treat + Year,  strata = plot.2$Plot, data=plot.2, permutations=999, method="bray")
-plant_bc
-hist(plant_bc$f.perms, main="Strata = plot", xlab="F permuted")
+#plant_bc<-adonis(formula=plant.2 ~ Treat + Year,  strata = plot.2$Plot, data=plot.2, permutations=999, method="bray")
+#plant_bc
+#hist(plant_bc$f.perms, main="Strata = plot", xlab="F permuted")
 
 #plant_bc.2<-adonis(formula=plant.2 ~ Treat * Year,  strata = plot.2$Plot, data=plot.2, permutations=999, method="bray")
 #plant_bc.2
@@ -2187,6 +2175,8 @@ ggarrange(nmds12, nmds13, nmds23, ncol=3, common.legend = TRUE)
 #dev.off()
 ```
 
+Here we are calculating distance from the centroid as a measure of beta diversity 
+
 ```{r distance centroid}
 cent <- cent %>% dplyr::select(-c(X1))
 plant_all <- plant_all %>% dplyr::select(-c(X1))
@@ -2227,26 +2217,74 @@ colnames(out_centroid) <- col_head
 drift_cent <- merge(nmds_all, out_centroid, by =c("Plot", "Year"))
 ```
 
+Produces graphic and RM ANOVA 
+
 ```{r dist_cent_graphic}
-dodge <- position_dodge(width = 0.35)
+dodge <- position_dodge(width = 0.5)
 
-drift_mean <- drift_cent %>% group_by(Treat, Year) %>% summarise_at(c("distance_centroid"), list(mean,var, max))
+drift_mean <- drift_cent %>% group_by(Treat, Year) %>% 
+  summarise_at(c("distance_centroid"), list(mean,var, max)) %>%
+  mutate(Year = as.factor(Year))
 
-#jpeg(file="group_years_treat.jpeg", width = 180, height = 150, units = 'mm', res = 300)
+#jpeg(file="distance_centroid_plant_SSE.jpeg", width = 180, height = 150, units = 'mm', res = 300)
 drift_cent %>%  mutate(Year = as.factor(Year))%>%
- # arrange(Year) %>% 
-  ggplot( aes(x=Year, y = distance_centroid)) +
+  ggplot(aes(x=Year, y = log10(distance_centroid)))+
+  #  geom_violin(aes(x=Year, y = log10(distance_centroid), fill=Treat),position = dodge)+ 
+  #  geom_point(aes(x=Year, y = log10(distance_centroid),  fill=Treat), pch=21, position = dodge)+
+  # geom_errorbar(err_sd_shan, position=dodge, width=0.1) +
+  # geom_point(aes(x=Year, y =log10(fn1), fill=Treat), data=drift_mean, pch=21, size=2.75, position=dodge)+
+  # arrange(Year) %>% 
+  geom_boxplot(aes(x=Year, y = log10(distance_centroid), colour=Treat), width=0.5, position = dodge, outlier.colour = NULL)+ 
+  geom_boxplot(aes(x=Year, y = log10(distance_centroid), fill=Treat), width=0.5, position = dodge, outlier.size=-1)+ 
   rita_theme + 
-  geom_boxplot(aes(x=Year, y = (distance_centroid), fill=Treat), width=0.5)+ 
   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP")) +
   theme(legend.position = c(0.15, 0.85))+
-  labs(x="", y="Distance from centroid")
+  scale_colour_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP")) +
+  labs(x="", y="Distance from centroid")+
+  guides(colour=FALSE)+
+  annotate("text", x = 1, y = 0, label = "A", size=4) + #2017
+  annotate("text", x = 2, y = 1, label = "B", size=4) + #2018
+  annotate("text", x = 3, y = 1, label = "B", size=4) +  #2019
+  # 
+  annotate("text", x = 0.80, y = -0.55, label = "a", size=2) + #17 never sprayed
+  annotate("text", x = 0.90, y = -0.55, label = "a", size=2) +  #17 always sprayed
+  annotate("text", x = 1.05, y = -0.55, label = "a", size=2) +  #17 cr->p
+  annotate("text", x = 1.20, y = -0.55, label = "a", size=2) +  #17 crp
+  #
+  annotate("text", x = 1.80, y = 0, label = "a", size=2) + #18 never sprayed
+  annotate("text", x = 1.90, y = 0, label = "ab", size=2) +  #18 always sprayed
+  annotate("text", x = 2.05, y = 0, label = "ab", size=2) +  #18 cr->p
+  annotate("text", x = 2.20, y = 0.28, label = "b", size=2) +  #18 crp
+  # 
+  annotate("text", x = 2.80, y = 0.18, label = "a", size=2) + #19 never sprayed
+  annotate("text", x = 2.90, y = 0.25, label = "b", size=2) +  #19 always sprayed
+  annotate("text", x = 3.05, y = 0.18, label = "a", size=2) +  #19 cr->p
+  annotate("text", x = 3.20, y = 0.28, label = "b", size=2)  #19 crp
 #dev.off()
+```
 
+```{r RM anova distance centroid}
 cent.mod <- aov(distance_centroid ~ Treat * as.factor(Year), data= drift_cent)
 summary(cent.mod)
+
+drift_cent <- drift_cent %>% 
+  mutate(Plot = as.factor(Plot), Year = as.factor(Year),
+         log_dist = log10(distance_centroid))
+cent.modrm2 <- aov(log_dist ~ Treat * Year + Error(Plot/Year), data= drift_cent)
+summary(cent.modrm2)
+
+dist.year.eta <-(summary(cent.modrm2)[["Error: Plot:Year"]][[1]]["Year" , "F value"]*summary(cent.modrm2)[["Error: Plot:Year"]][[1]]["Year" , "Df"])/(summary(cent.modrm2)[["Error: Plot:Year"]][[1]]["Year" , "F value"]*summary(cent.modrm2)[["Error: Plot:Year"]][[1]]["Year" , "Df"]+summary(cent.modrm2)[["Error: Plot:Year"]][[1]]["Residuals" , "Df"])
+dist.year.eta
+
+dist.treat.eta <-(summary(cent.modrm2)[["Error: Plot"]][[1]]["Treat" , "F value"]*summary(cent.modrm2)[["Error: Plot"]][[1]]["Treat" , "Df"])/(summary(cent.modrm2)[["Error: Plot"]][[1]]["Treat" , "F value"]*summary(cent.modrm2)[["Error: Plot"]][[1]]["Treat" , "Df"]+summary(cent.modrm2)[["Error: Plot"]][[1]]["Residuals" , "Df"])
+dist.treat.eta
+
+postcent <- emmeans(cent.modrm2, ~ Year *Treat)
+pairs(postcent)
 
 ```
 
