@@ -4,7 +4,7 @@ Analyses associated with SSE and plant community data
 - PLANT_SSE_JUNE2020.rmd R markdown file containing all data formatting and analyses associated with the plant community SSE dataset
 - Data folder contains all raw data used in the analyses 
 
-- Contents within Data folder
+Contents within Data folder
 1. 2017PlotBiomass_SSprayExp: plot level plant biomass data from SSE plot 
 2. 2018PlotBiomass_SSprayExp: plot level plant biomass data from SSE plot 
 3. 2019PlotBiomass_SSprayExp: plot level plant biomass data from SSE plot 
