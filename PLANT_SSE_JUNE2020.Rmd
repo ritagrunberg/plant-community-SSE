@@ -19,7 +19,7 @@ library(piecewiseSEM) # SEM
 #library(semPlot) # plot SEM
 library(hillR)   # hill diversity
 library(agricolae)# AUDPS
-library(MASS)    # discriminate function
+#library(MASS)    # discriminate function
 library(emmeans)
 library(lmerTest)
 library(multcomp)
