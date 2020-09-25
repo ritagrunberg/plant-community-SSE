@@ -15,20 +15,20 @@ library(ggplot2) # graphing
 library(ggpubr)  # nice package for figures
 library(vegan)   # nmds + most community analyses 
 #library(car)     # repeated measures ANOVA and MANOVA 
-library(piecewiseSEM) # SEM
+#library(piecewiseSEM) # SEM
 #library(semPlot) # plot SEM
 library(hillR)   # hill diversity
 library(agricolae)# AUDPS
 #library(MASS)    # discriminate function
 library(emmeans)
 library(lmerTest)
-library(multcomp)
-library(DescTools)
+#library(multcomp)
+#library(DescTools)
 #library(semEff)  #bootstrap SEM
 
-cent <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/NMDS_centroids_plant_community_SSE.csv")
+cent <- read_csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/NMDS_centroids_plant_community_SSE_relative_cover.csv")
 cent_pa <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/NMDS_centroids_plant_community_SSE_PA_3D.csv")
-plant_all <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/NMDS_plant_community_SSE.csv")
+plant_all <- read_csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/NMDS_plant_community_SSE_relative_cover.csv")
 plant_all_pa <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/NMDS_plant_community_SSE_PA_3D.csv")
 plant_groups <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cover_analysis/data/plant_groups.csv")
 plant_community <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cover_analysis/data/plant_community_fixed_2Dec2019.csv")
@@ -38,8 +38,11 @@ plotbiomass_2018 <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cove
 plotbiomass_2019 <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cover_analysis/data/2019PlotBiomass_SSprayExp.csv")
 SSE_prevalence_overall <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/SSE_prevalence_overall.csv") #overall prevalence 
 SSE_prevalence_spp <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/SSE_prevalence_spp.csv")
-pcoordO <- read_csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/plantsp_coordinates_BC.csv")
+pcoordO <- read_csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/plantsp_coordinates_BC_relative_cover.csv")
 #prevalence for each parasite spp. 
+plant_height_Widener2020 <- read_csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/Plant.height.data_Widener2020.csv")
+climate_data_durham <- read_csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/climate_data_durham.csv")
+
 ```
 
 Description of data files
@@ -68,6 +71,17 @@ rita_theme <-  theme_classic(base_size = 15)+
         axis.text.y = element_text(size=12,  colour = "black"), # bold
         axis.title.y = element_text(size=14, colour = "black")
   )
+```
+
+Get the 95% quantile for plant max height from data collection by Brooklynn and Rita in the Widener plots Sept 22 2020
+
+```{r quantile height widner}
+plant95quant_widener <- plant_height_Widener2020 %>%
+  group_by(Species) %>%
+  summarise(Max_height_cm =quantile(Max_height_cm, c( .95))) %>% #get 95% quantile for max height 
+  filter(Max_height_cm > 30) # remove Poa from dataset, not comfortable with ID 
+
+head(plant95quant_widener)
 ```
 
 ```{r formatting community data}
@@ -267,13 +281,85 @@ names(plant_community_disease)[names(plant_community_disease) == "Schedonorus ar
 plant_group_etc_one <- merge(plant_community_disease, plant_g_wide, by =c("Plot", "Year", "Treat"))
 plant_group_etc <- merge(plant_group_etc_one, plant_invasive, by =c("Plot", "Year", "Treat"))
 
-charles_list <- plant_tidy %>%
-  group_by(Species) %>% 
-  filter (sum(cover)>0) %>%
-  group_by(Species, Max_height_cm, Origin, Growth) %>%
-  summarise_at(c("cover"), max)
-
+# charles_list <- plant_tidy %>%
+#   group_by(Species) %>% 
+#   filter (sum(cover)>0) %>%
+#   group_by(Species, Max_height_cm, Origin, Growth) %>%
+#   summarise_at(c("cover"), max)
 #write.csv(charles_list, 'plant_height_SSE.csv')
+```
+
+Get community weighted mean for max plant height
+
+```{r CWM height}
+cwm_height <- plant_tidy %>% 
+  filter(Max_height_cm >0)%>% # only include sp with height data
+  filter(cover >0)%>% # remove sp with zero cover
+  group_by(Plot, Year, Treat) %>%
+  summarise(Height_cwm = weighted.mean(Max_height_cm, cover),
+            total_cover = sum(cover)) %>%
+  mutate(Year = as.factor(Year))
+
+
+cwm1<- cwm_height %>%
+  ggplot()+
+  geom_boxplot(aes(x=Year, y=log10(Height_cwm), fill=Treat))+
+  scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP"))+
+  labs(x="",y="max height cwm")+
+  ggtitle("CWM with Poa (estimate 30 cm)")+
+  rita_theme+
+  guides(fill=guide_legend("Treatment",  keywidth=0.12,
+                           keyheight=0.12, override.aes = list(shape=21),
+                           default.unit="inch"), color= FALSE)+
+  theme(legend.title = element_text(size=7, face="bold"),
+        legend.text = element_text(size=6.5))+ 
+  theme(legend.position=c(0.10,0.85))
+
+cwm_anova <- aov(log10(Height_cwm) ~ Year * Treat + Error(Plot/(Year)), cwm_height)
+summary(cwm_anova)
+
+
+  hist1 <-ggplot(cwm_height, aes(total_cover))+geom_histogram()+theme_bw()+
+    labs(x="total cover included in CWM w/ Poa")
+
+  
+  cwm_height2 <- plant_tidy %>% 
+    filter(Species != 'Poa pratensis') %>% # remove estimate
+    filter(Max_height_cm >0)%>% # only include sp with height data
+    filter(cover >0)%>% # remove sp with zero cover
+    group_by(Plot, Year, Treat) %>%
+    summarise(Height_cwm = weighted.mean(Max_height_cm, cover),
+              total_cover = sum(cover)) %>%
+    mutate(Year = as.factor(Year))
+
+ cwm2<- cwm_height2 %>%
+    ggplot()+
+    geom_boxplot(aes(x=Year, y=(Height_cwm), fill=Treat))+
+    scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP"))+
+  labs(x="",y="max height cwm")+
+  ggtitle("CWM without Poa")+
+  rita_theme+
+  guides(fill=guide_legend("Treatment",  keywidth=0.12,
+                           keyheight=0.12, override.aes = list(shape=21),
+                           default.unit="inch"), color= FALSE)+
+  theme(legend.title = element_text(size=7, face="bold"),
+        legend.text = element_text(size=6.5))+ 
+  theme(legend.position=c(0.10,0.85))
+ 
+ cwm_anova2 <- aov(log10(Height_cwm) ~ Year * Treat + Error(Plot/(Year)), cwm_height2)
+ summary(cwm_anova2)
+ 
+  hist2 <-ggplot(cwm_height2, aes(total_cover))+geom_histogram()+theme_bw()+
+    labs(x="total cover included in CWM w/o Poa")
+
+ ggarrange(cwm1, cwm2 #,
+          # hist1, hist2
+           )
+
 ```
 
 ```{r plant_height}
@@ -294,7 +380,8 @@ plant_tidy %>% filter(Max_height_cm >0)%>%
  # filter(cover <76)%>%
   #filter(Max_height_cm = 65.8)%>% # fescue 
   ggplot(aes(x=Max_height_cm, y = log10(cover), fill=Treat)) +
-  annotate("rect", xmin = 64, xmax = 120, ymin = -1, ymax = 2, alpha = 0.35, fill="grey")+
+  annotate("rect", xmin = 64, xmax = 164, ymin = -3, ymax = 0, alpha = 0.35, fill="grey")+
+#  annotate("rect", xmin = 64, xmax = 164, ymin = -1, ymax = 2, alpha = 0.35, fill="grey")+
   geom_point(aes(x=Max_height_cm, y = log10(cover), fill=Treat), pch=21, size=2)+
   #geom_bar(stat = "identity")+
   #rita_theme+
@@ -304,7 +391,7 @@ plant_tidy %>% filter(Max_height_cm >0)%>%
   scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP"))+
-  labs(x="Max plant height (cm) data from Wilfahrt 2020 Supp",  y="log (% cover)")
+  labs(x="Max plant height (cm)",  y="log (% cover)")
 #guides(fill=FALSE, color=FALSE)
 #dev.off()
 
@@ -325,21 +412,22 @@ plant_tidy %>% filter(Max_height_cm >0)%>%
   guides(fill=FALSE)
 
 
-plant_tidy %>% 
-  filter(Species %in% c("Poa pratensis", "Steinchisma hians", "Rosa multiflora", "Rubus argutus", "Verbesina occidentalis")) %>%
-  group_by(Treat, Year, Species)%>%
-  summarise_at(c("cover"), mean) %>%
-  ggplot()+
-  geom_point(aes(y=Species, x = log10(cover), fill=Treat), size=2.5, pch=21)+
-    scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
-                    guide=guide_legend(override.aes=list(shape=21)), 
-                    labels = c("Never", "Always", "CR->P", "CRP"))+
-  facet_wrap(~Year)+ theme_bw()
+# plant_tidy %>% 
+#   filter(Species %in% c("Poa pratensis", "Steinchisma hians", "Rosa multiflora", "Rubus argutus", "Verbesina occidentalis")) %>%
+#   group_by(Treat, Year, Species)%>%
+#   summarise_at(c("cover"), mean) %>%
+#   ggplot()+
+#   geom_point(aes(y=Species, x = log10(cover), fill=Treat), size=2.5, pch=21)+
+#     scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21)), 
+#                     labels = c("Never", "Always", "CR->P", "CRP"))+
+#   facet_wrap(~Year)+ theme_bw()
 ```
 
 ```{r change_height}
 plant_change <-plant_tidy %>% filter(Max_height_cm >0)%>%
   group_by(Treat, Plot, Year, Species, Max_height_cm)%>%
+  filter(Species != 'Poa pratensis') %>% # remove estimat
   summarise_at(c("cover"), mean) %>%
   arrange(Year)%>%
   ungroup()%>%
@@ -358,7 +446,7 @@ pt1 <-plant_change %>%
                     labels = c("Never", "Always", "CR->P", "CRP"))+
  # geom_hline(yintercept = 65.8, lwd=1, lty=2)+
 #  geom_hline(yintercept = 65.8, lwd=1, lty=2)+
-  labs(x="Change in cover 2017 to 2018", y= "Max plant height (cm) data from Wilfahrt 2020 Supp")+
+  labs(x="Change in cover 2017 to 2018", y= "Max plant height (cm)")+
   theme_bw()+facet_wrap(~Treat)
 
 pt2 <-plant_change %>% 
@@ -373,8 +461,24 @@ pt2 <-plant_change %>%
                     labels = c("Never", "Always", "CR->P", "CRP"))+
   # geom_hline(yintercept = 65.8, lwd=1, lty=2)+
   #  geom_hline(yintercept = 65.8, lwd=1, lty=2)+
-  labs(x="Change in cover 2018 to 2019", y= "Max plant height (cm) data from Wilfahrt 2020 Supp")+
+  labs(x="Change in cover 2018 to 2019", y= "Max plant height (cm)")+
   theme_bw()+facet_wrap(~Treat)
+
+pt3 <-plant_change %>%
+  filter(Species != 'Schedonorus arundinaceus') %>% # remove estimat
+  filter(Year == '2019') %>% 
+  filter(change_17 != 0) %>%
+  ggplot()+
+  #annotate("rect", xmin = -70, xmax = 80, ymin = 64, ymax = 120,alpha = 0.1, fill="black")+
+  #geom_vline(xintercept = 0, lwd=1, lty=1)+
+  geom_point(aes(y= (change_17), x = log10(Max_height_cm), fill=Treat), pch=21, size=2)+
+  scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21)), 
+                    labels = c("Never", "Always", "CR->P", "CRP"))+
+ # geom_hline(yintercept = 65.8, lwd=1, lty=2)+
+#  geom_hline(yintercept = 65.8, lwd=1, lty=2)+
+  labs(y="Change in cover 2017 to 2019", x= "Max plant height (cm)")+
+  theme_bw()#+facet_wrap(~Treat)
 
 #jpeg(file="plant_change_cover_height.jpeg", width = 300, height = 250, units = 'mm', res = 300)
 ggarrange(pt1, pt2, common.legend = TRUE)
@@ -464,6 +568,120 @@ plant_SSE <- plant_SSE %>% mutate(Plot = as.factor(Plot),
                                   ) 
 
 #write.csv(plant_SSE, "plant_SSE.csv")
+
+ # plant_SSE %>% 
+ #  mutate(column= as.factor(column), row= as.factor(row))%>%
+ #  rename(Poa ='Poa pratensis')%>%
+ #  ggplot(aes(x=column, y = row, fill=Poa))+
+ #  geom_tile(color = "white")+
+ #  geom_raster(aes(x=column, y = row, fill=Poa))+
+ #  scale_fill_gradient(low="white", high="#005a32", na.value = "white", name="% cover") +
+ #  labs(x="", y="", title='Poa pratensis') +
+ #  geom_text(aes(x=column, y = row, label=(round(Poa,2)*100)), size=3, vjust=1)+ 
+ #  theme(
+ #    axis.title.x = element_blank(),
+ #    axis.title.y = element_blank(),
+ #    panel.grid.major = element_blank(),
+ #    panel.border = element_blank(),
+ #    panel.background = element_blank(),
+ #    axis.ticks = element_blank(),
+ #    legend.justification = c(1, 0),
+ #  #  legend.position = c(1.5, 0.8),
+ #    legend.direction = "horizontal"
+ #   )+
+ #  guides(fill = guide_colorbar(barwidth = 7, barheight = 1, title.position = "top", title.hjust = 0.5))+
+ #  guides(fill=FALSE)+
+ #  facet_wrap(~Year)
+
+```
+
+```{r fourth corner}
+library(mvabund)
+
+climate_sub <- climate_data_durham %>% 
+  filter(Year %in% c("2017", "2018", "2019")) %>%
+  filter(Month %in% c("May", "June" , "July" , "August", "September", "October", "November"))%>%
+  group_by(Year)%>%
+  summarise(total_rain = sum(P_MONTHLY_CALC))%>%
+  select(Year, total_rain)
+
+height_plant <- plant_tidy %>% 
+  #group_by(Species)%>%
+  filter(Max_height_cm >0)%>%
+  group_by(Species)%>%
+  mutate(total_cover =sum(cover))%>%
+  ungroup() %>% 
+  filter(total_cover >0)%>%
+  select(-c(total_cover))
+
+cover_matrix <- height_plant %>% 
+  spread(Species, cover) %>% 
+ # replace(is.na(.), 0) %>% 
+#  select(c(1:2, 4, 15, 18, 23,25:55)) %>%
+  select(c(1:2, 4,13, 25:45)) %>%
+  replace(is.na(.), 0)%>%
+  #group_by(Plot, Year, Treat, Origin, Growth, Max_height_cm) %>%
+  group_by(Plot, Year, Treat, AUDPS_parasite) %>%
+  summarise_each(funs(sum)) %>%
+  arrange(Plot, Year)
+
+trait_matrix <- plant_tidy %>% 
+  #group_by(Species)%>%
+  filter(Max_height_cm >0)%>%
+  filter(Max_height_cm >0)%>%
+  group_by(Species)%>%
+  mutate(total_cover =sum(cover))%>%
+  ungroup() %>% 
+  filter(total_cover >0)%>%
+  select(-c(total_cover))%>%
+  group_by(Species) %>% 
+  group_by(Species,Origin, Growth) %>% 
+  summarise_at(c('Max_height_cm'), mean)
+
+YR_matrix <- cover_matrix %>% 
+  ungroup()%>% 
+  mutate(obs = 1) %>%
+  spread(Year, obs)%>%
+  select(c('2017', '2018', '2019'))%>%
+  replace(is.na(.), 0)
+
+TRT_matrix <- cover_matrix %>% 
+  ungroup()%>% 
+  mutate(obs = 1) %>%
+  spread(Treat, obs)%>%
+  arrange(Plot)%>%
+  select(c( 'C->R->P', 'Control', 'CR->P', "CRP"))%>%
+  replace(is.na(.), 0)
+
+#envi_matrix <- cbind(YR_matrix, TRT_matrix)
+p_matrix <- cover_matrix %>% 
+  ungroup() %>%
+  select(Plot, Year, AUDPS_parasite)
+
+#envi_matrix <- merge(p_matrix, climate_sub, by =c("Year")) %>%
+ # select(AUDPS_parasite, total_rain)
+#envi_matrix<- cover_matrix %>% select(c(Year, Treat))
+
+
+abun_matrix <- cover_matrix %>% 
+  ungroup()%>%
+  select(5:25)
+
+#abun_spp <- mvabund(abun_matrix)
+#plot(abun_spp~cover_matrix$Treat)
+# mod3 <- manyglm(abun_spp ~cover_matrix$Treat *cover_matrix$Year, family='binomial')
+# anova(mod3)
+# plot(mod3)
+# anova(mod3, p.uni="adjusted")
+
+#ft=traitglm(L=abun_matrix,
+ #          R=envi_matrix,
+  #          Q=trait_matrix,
+   #         method="manyglm")
+
+#ft$fourth #print fourth corner terms
+
+
 
 ```
 
@@ -752,12 +970,10 @@ fescue <- plant_SSE %>%
          std = sd(Schedonorus_arundinaceus*100)) %>% 
   ungroup() %>% mutate(Year = as.factor(Year))
 
-fescue_yr <- plant_SSE %>% 
+fescue_yr <- plant_SSE %>% ungroup()%>%
   group_by(Year) %>%
-  mutate(mean = mean(Schedonorus_arundinaceus*100),
-         std = sd(Schedonorus_arundinaceus*100)) %>% 
-  ungroup()
-
+  summarise(mean = mean(Schedonorus_arundinaceus*100),
+         std = sd(Schedonorus_arundinaceus*100))
 dodge <- position_dodge(width = 0.75)
 
 #jpeg(file="fescue_cover_SSE.jpeg", width = 120, height = 90, units = 'mm', res = 300)
@@ -1487,7 +1703,7 @@ We also assessed whether fungicide treatment influenced patterns in plant commun
 set.seed(1234567) #make sure to set seed to get the same result, this is a permutation based method 
 # create community matrix and envi data matrix 
 plant<-plant_SSE[,8:105] # makes new matrix with community data (columns 2-100)
-plot<-plant_SSE[,c(1:5,110:111,118:120)]# makes new matrix with envi data (columns 1-3)
+plot<-plant_SSE[,c(1:5,110:111,121:124)]# makes new matrix with envi data (columns 1-3)
 plot$Year <- as.factor(plot$Year)
 # more formatting
 # remove columns 
@@ -1558,10 +1774,10 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 
 ```{r permanova BC}
 set.seed(1234567) #make sure to set seed to get the same result, this is a permutation based method 
-#ordO<-metaMDS(plant.2, distance="bray", trymax = 2000, autotransform=FALSE) # not transformed 
-#ordO
-#fit<-envfit(ordO, plot.2[,6:10],perm=999)#fits vectors
-#fit # prints coordinates for host vectors and test of sig
+#ordO<-metaMDS(plant.2, distance="bray", trymax = 500, autotransform=FALSE) # not transformed 
+ordO
+fit<-envfit(ordO, plot.2[,6:10],perm=999)#fits vectors
+fit # prints coordinates for host vectors and test of sig
 
 #plant_bc.0<-adonis(formula=plant.2 ~ Treat + Year, data=plot.2, permutations=999, method="bray")
 #plant_bc.0
@@ -1571,8 +1787,8 @@ set.seed(1234567) #make sure to set seed to get the same result, this is a permu
 #plant_bc
 #hist(plant_bc$f.perms, main="Strata = plot", xlab="F permuted")
 
-#plant_bc.2<-adonis(formula=plant.2 ~ Treat * Year,  strata = plot.2$Plot, data=plot.2, permutations=999, method="bray")
-#plant_bc.2
+plant_bc.2<-adonis(formula=plant.2 ~ Treat * Year,  strata = plot.2$Plot, data=plot.2, permutations=999, method="bray")
+plant_bc.2
 
 ```
 
@@ -1585,9 +1801,9 @@ Data:     plant.2
 Distance: bray 
 
 Dimensions: 2 
-Stress:     0.1181266 
+Stress:     0.1160433 
 Stress type 1, weak ties
-Two convergent solutions found after 634 tries
+Two convergent solutions found after 474 tries
 Scaling: centring, PC rotation, halfchange scaling 
 Species: expanded scores based on ‘plant.2’ 
 
@@ -1596,28 +1812,16 @@ ENVI FIT FUNCTION
 ***VECTORS
 
                   NMDS1    NMDS2     r2 Pr(>r)  
-log_biomass     0.98973  0.14295 0.0405  0.018 *
-AUDPS_parasite -0.98023 -0.19785 0.0145  0.238  
-Anthracnose    -0.91150 -0.41129 0.0153  0.209  
-Rhiz           -0.68872  0.72503 0.0024  0.795  
-Rust           -0.78692 -0.61705 0.0219  0.102  
-####################################################################################
-Call:
-adonis(formula = plant.2 ~ Treat + Year, data = plot.2, permutations = 999,      method = "bray", strata = plot.2$Plot) 
-
-Blocks:  strata 
-Permutation: free
-Number of permutations: 999
-
-Terms added sequentially (first to last)
-
-           Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)    
-Treat       3    0.4366 0.14555  2.4909 0.03546  0.001 ***
-Year        2    1.0073 0.50367  8.6198 0.08182  0.001 ***
-Residuals 186   10.8683 0.05843         0.88272           
-Total     191   12.3123                 1.00000           
+log_biomass     0.98200  0.18887 0.0316  0.062 .
+AUDPS_parasite -0.80091 -0.59878 0.0148  0.242  
+Anthracnose    -0.80967 -0.58688 0.0146  0.252  
+Rhiz           -0.57392  0.81891 0.0102  0.364  
+Rust           -0.93476 -0.35529 0.0051  0.623  
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+Permutation: free
+Number of permutations: 999
+###################################################################################
 
 ####################################################################################
 
@@ -1631,11 +1835,11 @@ Number of permutations: 999
 Terms added sequentially (first to last)
 
             Df SumsOfSqs MeanSqs F.Model      R2 Pr(>F)    
-Treat        3    0.4366 0.14555  2.4669 0.03546  0.001 ***
-Year         2    1.0073 0.50367  8.5366 0.08182  0.001 ***
-Treat:Year   6    0.2481 0.04134  0.7007 0.02015  0.117    
-Residuals  180   10.6203 0.05900         0.86257           
-Total      191   12.3123                 1.00000           
+Treat        3    0.4574 0.15245  2.3570 0.03222  0.001 ***
+Year         2    1.8166 0.90830 14.0428 0.12799  0.001 ***
+Treat:Year   6    0.2770 0.04617  0.7139 0.01952  0.206    
+Residuals  180   11.6425 0.06468         0.82027           
+Total      191   14.1936                 1.00000           
 ---
 Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
 ########################################################################################
@@ -1750,30 +1954,32 @@ Plant community structure differed among fungicide treatments and across years. 
 ```{r NMDS bray curtis}
 #scrs17 <-scores(ordO, display = "sites", "species")
 #trt_groups <- (c( 'Treat', 'Year')) 
+# 
+# #extract info for plotting purposes 
+# hcoordO<-as.data.frame(scores(ordO, display="sites")) #extracts coordinates for plot
+# pcoordO<-as.data.frame(scores(ordO, display="species")) #extracts coordinates for plant vectors
+# pcoordO$plant_sp<- rownames(pcoordO, "species")
+# pcoordO <- pcoordO %>%   
+#  separate(col=plant_sp, into = c("Genus", "species"))
+# write.csv(pcoordO, 'plantsp_coordinates_BC_relative_cover.csv')
+# 
+# plant_all <- bind_cols(plot.2, hcoordO)
+# write.csv(plant_all, "NMDS_plant_community_SSE_relative_cover.csv")
+# 
+# #should have data for 3 yrs and 4 treatments 
+# #calculating centroids 
+# cent <-aggregate(scrs17 ~ Treat + Year, data = plant_all, FUN = "mean")
+# se <- function(z)sd(z)/sqrt(length(z)) # function to calculate std.err
+ #ci95 <- function(z) qt(0.025,df=length(z)-1, lower.tail=F)* sd(z)/sqrt(length(z)) 
 
-#extract info for plotting purposes 
-#hcoordO<-as.data.frame(scores(ordO, display="sites")) #extracts coordinates for plot
-#pcoordO<-as.data.frame(scores(ordO, display="species")) #extracts coordinates for plant vectors
-#pcoordO$plant_sp<- rownames(pcoordO, "species")
-#pcoordO <- pcoordO %>%   
- # separate(col=plant_sp, into = c("Genus", "species"))
-#write.csv(pcoordO, 'plantsp_coordinates_BC.csv')
-
-#plant_all <- bind_cols(plot.2, hcoordO)
-#write.csv(plant_all, "NMDS_plant_community_SSE.csv")
-
-#should have data for 3 yrs and 4 treatments 
-#calculating centroids 
-#cent <-aggregate(scrs17 ~ Treat + Year, data = plant_all, FUN = "mean")
-#se <- function(z)sd(z)/sqrt(length(z)) # function to calculate std.err
-#ci95 <- function(z) qt(0.025,df=length(z)-1, lower.tail=F)* sd(z)/sqrt(length(z)) 
-#cent.95<- aggregate(scrs17 ~ Treat + Year,data=plant_all,ci95)
-#cent.SE<- aggregate(scrs17 ~ Treat + Year,data=plant_all,se)
-#cent <- merge(cent, cent.SE, by =c("Treat", "Year"))
-#write.csv(cent, "NMDS_centroids_plant_community_SSE.csv")
-
-topp<-max(cent[,5:6]) #determines maximum and minimum values for the plot axes
-bott<-min(cent[,5:6]) #I draw from both data sets because I make the graph sqaure
+#cent.95 <- plant_all %>% group_by(Treat, Year) %>% summarise(NMDS1_95= ci95(NMDS1), NMDS2_95 = ci95(NMDS2))
+ #cent.95<- aggregate(c(NMDS1, NMDS2) ~ Treat + Year,data=plant_all,ci95)
+# cent.SE<- aggregate(scrs17 ~ Treat + Year,data=plant_all,se)
+ #cent <- merge(cent, cent.95, by =c("Treat", "Year"))
+# write.csv(cent, "NMDS_centroids_plant_community_SSE_relative_cover.csv")
+# 
+# topp<-max(cent[,5:6]) #determines maximum and minimum values for the plot axes
+# bott<-min(cent[,5:6]) #I draw from both data sets because I make the graph sqaure
 
 plant_all$Year <- as.factor(plant_all$Year)
 plant_all$Treat <- as.factor(plant_all$Treat)
@@ -1814,7 +2020,7 @@ ggplot(plant_all, aes(x= NMDS1, y=NMDS2))+
                            default.unit="inch"), color= FALSE)+
   theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) # add black square panel around graphic
 
-#jpeg(file="plant_community_centroid_SSE.jpeg", width = 90, height = 270, units = 'mm', res = 300)
+#jpeg(file="plant_community_centroid_SSE_relative.jpeg", width = 90, height = 250, units = 'mm', res = 300)
 ggplot(cent, aes(x= NMDS1.x, y=NMDS2.x))+
   geom_hline(yintercept = 0, lty=2, color="grey") +
   geom_vline(xintercept = 0, lty=2, color="grey") +
@@ -1824,11 +2030,11 @@ ggplot(cent, aes(x= NMDS1.x, y=NMDS2.x))+
                      xmax=NMDS1.x +NMDS1.y),height=0.05)+
   #geom_path(aes(color=Treat), lwd=0.5)+
   geom_point(size =2.5, aes(fill=Treat, shape=Year))+
-  geom_text(data= pcoordO, aes(x=NMDS1,y=NMDS2, label=Genus), fontface =2, colour = "black" , size=1) + # label year
+ # geom_text(data= pcoordO, aes(x=NMDS1,y=NMDS2, label=Genus), fontface =2, colour = "black" , size=1) + # label year
   xlab("NMDS 1 (B-C)") +
   ylab("NMDS 2 (B-C)") +
-  xlim(c( -0.28, 0.52)) +
-  ylim(c( -0.28, 0.52)) +
+  xlim(c( -0.45, 0.9)) +
+  ylim(c( -0.45, 0.9)) +
   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP")) +
@@ -1840,7 +2046,7 @@ ggplot(cent, aes(x= NMDS1.x, y=NMDS2.x))+
         legend.text = element_text(size=4.5), legend.box = "horizontal") +
   theme(legend.title = element_text(size=4.5, face="bold"),
         legend.text = element_text(size=3.5))+ 
-  theme(legend.position=c(0.75,0.80))+
+  theme(legend.position=c(0.75,0.95))+
   facet_wrap(~Year, ncol=1, nrow = 3)+
   guides(fill=guide_legend("Treatment",  keywidth=0.12,
                            keyheight=0.12, override.aes = list(shape=21),
@@ -1848,7 +2054,7 @@ ggplot(cent, aes(x= NMDS1.x, y=NMDS2.x))+
          shape=guide_legend("Year",  keywidth=0.12,
                             keyheight=0.12, 
                             default.unit="inch"))+
-  theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) # add black square panel around graphic
+  theme(panel.border = element_rect(colour = "black", fill=NA, size=1)) 
 #dev.off()
 
 #jpeg(file="plant_community_centroid_treat_SSE.jpeg", width = 90, height = 270, units = 'mm', res = 300)
@@ -2189,7 +2395,9 @@ Here we are calculating distance from the centroid as a measure of beta diversit
 cent <- cent %>% dplyr::select(-c(X1))
 plant_all <- plant_all %>% dplyr::select(-c(X1))
 nmds_all <- merge(cent, plant_all, by = c("Treat", "Year"))
+```
 
+```{r dist cent function}
 dist.pt <- function(x1, y1, x2, y2) sqrt((x2-x1)^2 + (y2-y1)^2) # finds distance between points 
 
 plot_list <- unique(nmds_all$Plot)
@@ -2211,8 +2419,8 @@ for (i in plot_list){
   
   from_center<- dist.pt (as.numeric(plot_target[1,3]),
                          as.numeric(plot_target[1,4]),
-                         as.numeric(plot_target[1,10]), 
-                         as.numeric(plot_target[1,11] ))
+                         as.numeric(plot_target[1,16]), 
+                         as.numeric(plot_target[1,17] ))
   
   d_cent <- data.frame(i, j, from_center)
   out_centroid <-rbind(out_centroid, d_cent)
@@ -2242,8 +2450,10 @@ drift_cent %>%  mutate(Year = as.factor(Year))%>%
   # geom_errorbar(err_sd_shan, position=dodge, width=0.1) +
   # geom_point(aes(x=Year, y =log10(fn1), fill=Treat), data=drift_mean, pch=21, size=2.75, position=dodge)+
   # arrange(Year) %>% 
-  geom_boxplot(aes(x=Year, y = log10(distance_centroid), colour=Treat), width=0.5, position = dodge, outlier.colour = NULL)+ 
-  geom_boxplot(aes(x=Year, y = log10(distance_centroid), fill=Treat), width=0.5, position = dodge, outlier.size=-1)+ 
+  geom_boxplot(aes(x=Year, y = log10(distance_centroid), colour=Treat), 
+               width=0.5, position = dodge, outlier.colour = NULL)+ 
+  geom_boxplot(aes(x=Year, y = log10(distance_centroid), fill=Treat),
+               width=0.5, position = dodge, outlier.size=-1)+ 
   rita_theme + 
   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
@@ -2252,20 +2462,20 @@ drift_cent %>%  mutate(Year = as.factor(Year))%>%
   scale_colour_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP")) +
-  labs(x="", y="Distance from centroid")+
+  labs(x="", y="log distance from centroid")+
   guides(colour=FALSE)+
-  annotate("text", x = 1, y = 0, label = "A", size=4) + #2017
+  annotate("text", x = 1, y = -0.3, label = "A", size=4) + #2017
   annotate("text", x = 2, y = 1, label = "B", size=4) + #2018
   annotate("text", x = 3, y = 1, label = "B", size=4) +  #2019
   # 
-  annotate("text", x = 0.80, y = -0.55, label = "a", size=2) + #17 never sprayed
-  annotate("text", x = 0.90, y = -0.55, label = "a", size=2) +  #17 always sprayed
-  annotate("text", x = 1.05, y = -0.55, label = "a", size=2) +  #17 cr->p
-  annotate("text", x = 1.20, y = -0.55, label = "a", size=2) +  #17 crp
+  annotate("text", x = 0.80, y = -0.80, label = "a", size=2) + #17 never sprayed
+  annotate("text", x = 0.90, y = -0.80, label = "a", size=2) +  #17 always sprayed
+  annotate("text", x = 1.05, y = -0.70, label = "ab", size=2) +  #17 cr->p
+  annotate("text", x = 1.20, y = -0.55, label = "b", size=2) +  #17 crp
   #
   annotate("text", x = 1.80, y = 0, label = "a", size=2) + #18 never sprayed
   annotate("text", x = 1.90, y = 0, label = "ab", size=2) +  #18 always sprayed
-  annotate("text", x = 2.05, y = 0, label = "ab", size=2) +  #18 cr->p
+  annotate("text", x = 2.05, y = 0, label = "a", size=2) +  #18 cr->p
   annotate("text", x = 2.20, y = 0.28, label = "b", size=2) +  #18 crp
   # 
   annotate("text", x = 2.80, y = 0.18, label = "a", size=2) + #19 never sprayed
@@ -2276,8 +2486,8 @@ drift_cent %>%  mutate(Year = as.factor(Year))%>%
 ```
 
 ```{r RM anova distance centroid}
-cent.mod <- aov(distance_centroid ~ Treat * as.factor(Year), data= drift_cent)
-summary(cent.mod)
+#cent.mod <- aov(distance_centroid ~ Treat * as.factor(Year), data= drift_cent)
+#summary(cent.mod)
 
 drift_cent <- drift_cent %>% 
   mutate(Plot = as.factor(Plot), Year = as.factor(Year),
@@ -2297,8 +2507,8 @@ pairs(postcent)
 ```
 
 ```{r nmds temporal variation}
-cent <- cent %>% dplyr::select(-c(X1))
-plant_all <- plant_all %>% dplyr::select(-c(X1))
+#cent <- cent %>% dplyr::select(-c(X1))
+#plant_all <- plant_all %>% dplyr::select(-c(X1))
 
 dist.pt <- function(x1, y1, x2, y2) sqrt((x2-x1)^2 + (y2-y1)^2) # finds distance between points 
 
@@ -2316,12 +2526,12 @@ for (i in plot_list){
   #  filter(Plot == 1) %>%
    #  arrange(Year)
   
-  plot_moved<- data.frame(distance2017_2018 = dist.pt(as.numeric(plot_target[1,6]), as.numeric(plot_target[1,7]),
-                                                       as.numeric(plot_target[2,6]), as.numeric(plot_target[2,7] )),
-                           distance2018_2019 = dist.pt(as.numeric(plot_target[2,6]), as.numeric(plot_target[2,7]),
-                                                       as.numeric(plot_target[3,6]), as.numeric(plot_target[3,7] )),
-                          distance2017_2019 = dist.pt(as.numeric(plot_target[1,6]), as.numeric(plot_target[1,7]),
-                                                       as.numeric(plot_target[3,6]), as.numeric(plot_target[3,7] ))
+  plot_moved<- data.frame(distance2017_2018 = dist.pt(as.numeric(plot_target[1,12]), as.numeric(plot_target[1,13]),
+                                                       as.numeric(plot_target[2,12]), as.numeric(plot_target[2,13] )),
+                           distance2018_2019 = dist.pt(as.numeric(plot_target[2,12]), as.numeric(plot_target[2,13]),
+                                                       as.numeric(plot_target[3,12]), as.numeric(plot_target[3,13] )),
+                          distance2017_2019 = dist.pt(as.numeric(plot_target[1,12]), as.numeric(plot_target[1,13]),
+                                                       as.numeric(plot_target[3,12]), as.numeric(plot_target[3,13] ))
                           )
   
   d_cent <- data.frame(i, plot_moved)
@@ -2338,16 +2548,30 @@ temporal_dissimilarity <- merge(plot_treatment, temporal_distance, by =c("Plot")
 ```{r temporal change graphic}
 
 temp_tidy <- temporal_dissimilarity %>% 
-  gather(Time, distance, 7:9) %>%
+  gather(Time, distance, 9) %>%
   group_by(Plot, Treat, Time) %>%
   summarise_at(c("distance"), mean)
 
 dodge <- position_dodge(width = 0.5)
 
-temp_tidy %>% ggplot(aes(x= Time, y = distance, fill=Treat))+
+# temp_tidy %>% ggplot(aes(x= Time, y = distance, fill=Treat))+
+#  # geom_point(aes(x=Time, y = log10(distance),  fill=Treat), pch=21, position = dodge)+ 
+#   geom_boxplot(aes(x=Time, y = log10(distance), colour=Treat), width=0.5, position = dodge, outlier.colour = NULL)+ 
+#   geom_boxplot(aes(x=Time, y = log10(distance), fill=Treat), width=0.5, position = dodge, outlier.size=-1)+ 
+#   theme_bw() +
+#   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21)), 
+#                     labels = c("Never", "Always", "CR->P", "CRP")) +
+#     scale_colour_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21)), 
+#                     labels = c("Never", "Always", "CR->P", "CRP")) +
+#   guides(colour=FALSE)+
+#   labs(x="", y="Temporal dissimilarity")
+
+temp_tidy %>% ggplot(aes(x= Treat, y = distance, fill=Treat))+
  # geom_point(aes(x=Time, y = log10(distance),  fill=Treat), pch=21, position = dodge)+ 
-  geom_boxplot(aes(x=Time, y = log10(distance), colour=Treat), width=0.5, position = dodge, outlier.colour = NULL)+ 
-  geom_boxplot(aes(x=Time, y = log10(distance), fill=Treat), width=0.5, position = dodge, outlier.size=-1)+ 
+  geom_boxplot(aes(x=Treat, y = log10(distance), colour=Treat), width=0.5, position = dodge, outlier.colour = NULL)+ 
+  geom_boxplot(aes(x=Treat, y = log10(distance), fill=Treat), width=0.5, position = dodge, outlier.size=-1)+ 
   theme_bw() +
   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
@@ -2355,19 +2579,28 @@ temp_tidy %>% ggplot(aes(x= Time, y = distance, fill=Treat))+
     scale_colour_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP")) +
-  guides(colour=FALSE)+
-  labs(x="", y="Temporal dissimilarity")
+  guides(colour=FALSE, fill=FALSE)+
+  labs(x="", y="Temporal community dissimilarity (2017-2019)")
+
 
 ```
 
 ```{r temporal dissimilarity anova}
 final_temp <- temporal_dissimilarity %>% 
-  gather(Time, distance, 7) %>%
+  gather(Time, distance, 9) %>%
   group_by(Plot, Treat, Time) %>%
   summarise_at(c("distance"), mean)
 
 tempdist.mod <- aov(log10(distance) ~ Treat, data= final_temp)
 summary(tempdist.mod)
+
+final_temp2 <- temporal_dissimilarity %>% 
+  gather(Time, distance, 7:8) %>%
+  group_by(Plot, Treat, Time) %>%
+  summarise_at(c("distance"), mean)
+
+tempdist.mod2 <- aov(log10(distance) ~ Treat + Time + Error(Plot/Time), data= final_temp2)
+summary(tempdist.mod2)
 
 ```
 
@@ -2464,8 +2697,6 @@ plot_change_spp <- merge(final_temp, entire_auc_parasite_spp, by ="Plot")
 head(plot_change_spp)
 ```
 
-
-
 ```{r disease community change}
 plot_change %>% 
  # filter(Treat == "C->R->P")%>%
@@ -2489,6 +2720,7 @@ plot_change_spp %>%
   facet_wrap(~parasite*Treat, scales='free')+
   geom_smooth(method="lm",  se = FALSE, colour='black')+
   theme_bw()
+
 ```
 
 
