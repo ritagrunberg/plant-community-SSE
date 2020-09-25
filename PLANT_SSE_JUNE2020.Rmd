@@ -39,6 +39,7 @@ plotbiomass_2019 <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cove
 SSE_prevalence_overall <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/SSE_prevalence_overall.csv") #overall prevalence 
 SSE_prevalence_spp <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/SSE_prevalence_spp.csv")
 pcoordO <- read_csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/plantsp_coordinates_BC.csv")
+plant_height_Widener2020 <- read_csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/Plant.height.data_Widener2020.csv")
 #prevalence for each parasite spp. 
 ```
 
@@ -55,7 +56,12 @@ Description of data files
 9. plotbiomass_2019 [2019PlotBiomass_SSprayExp.csv] plot biomass from SSE 
 10. SSE_prevalence_overall [SSE_prevalence_overall.csv] monthly prevalence data - plot level; cross-species prevalence used
 11. SSE_prevalence_spp [SSE_prevalence_plot_level.csv] monthly prevalence data - plot level; prevalence for the three focal pathogens used 
-
+```{r quantile height widner}
+plant95quant_widener <- plant_height_Widener2020 %>%
+  group_by(Species) %>%
+  summarise(Max.height.cm =quantile(Max.height.cm, c( .95))) %>% #get 95% quantile for max height 
+  filter(Max.height.cm > 30)  # remove Poa from dataset, not comfortable with ID 
+```
 
 ```{r set graphic theme}
 rita_theme <-  theme_classic(base_size = 15)+
