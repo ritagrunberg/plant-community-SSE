@@ -1,0 +1,70 @@
+Sample.ID,Max_height_cm,Species,Sample.location,Date.sampled,Measured.by
+ra1,82,Rubus argutus ,DL,9/22/2020,BNJ
+ra2,114,Rubus argutus ,DL,9/22/2020,BNJ
+ra3,53,Rubus argutus ,DL,9/22/2020,BNJ
+ra4,54,Rubus argutus ,DL,9/22/2020,BNJ
+ra5,38,Rubus argutus ,DL,9/22/2020,BNJ
+ra6,66,Rubus argutus ,ML,9/22/2020,BNJ
+ra7,67,Rubus argutus ,ML,9/22/2020,BNJ
+ra8,69,Rubus argutus ,ML,9/22/2020,BNJ
+ra9,77,Rubus argutus ,ML,9/22/2020,BNJ
+ra10,70,Rubus argutus ,ML,9/22/2020,BNJ
+ra11,54,Rubus argutus ,ML,9/22/2020,BNJ
+ra12,53,Rubus argutus ,ML,9/22/2020,BNJ
+ra13,78,Rubus argutus ,ML,9/22/2020,BNJ
+ra14,81,Rubus argutus ,ML,9/22/2020,BNJ
+ra15,68,Rubus argutus ,ML-37,9/22/2020,BNJ
+ra16,69,Rubus argutus ,ML-40,9/22/2020,BNJ
+ra17,64,Rubus argutus ,ML-36,9/22/2020,BNJ
+ra18,67,Rubus argutus ,ML-44,9/22/2020,BNJ
+ra19,45,Rubus argutus ,ML-54,9/22/2020,BNJ
+ra20,53,Rubus argutus ,ML-58,9/22/2020,BNJ
+rm1,100,Rosa multiflora,DL,9/22/2020,BNJ
+rm2,96,Rosa multiflora,DL,9/22/2020,BNJ
+rm3,120,Rosa multiflora,DL,9/22/2020,BNJ
+rm4,108,Rosa multiflora,ML,9/22/2020,BNJ
+rm5,67,Rosa multiflora,ML,9/22/2020,BNJ
+rm6,126,Rosa multiflora,ML-17,9/22/2020,BNJ
+rm7,65,Rosa multiflora,ML-33,9/22/2020,BNJ
+rm8,49,Rosa multiflora,ML-50,9/22/2020,BNJ
+td1,64,Tripsacum dactyloides,ML-04,9/22/2020,BNJ
+td2,62,Tripsacum dactyloides,ML-06,9/22/2020,BNJ
+td3,105,Tripsacum dactyloides,ML-05,9/22/2020,BNJ
+td4,81,Tripsacum dactyloides,ML-09,9/22/2020,BNJ
+td5,87,Tripsacum dactyloides,ML-10,9/22/2020,BNJ
+td6,75,Tripsacum dactyloides,ML-14,9/22/2020,BNJ
+td7,70,Tripsacum dactyloides,ML-13,9/22/2020,BNJ
+td8,64,Tripsacum dactyloides,ML-18,9/22/2020,BNJ
+td9,62,Tripsacum dactyloides,ML-30,9/22/2020,BNJ
+td10,83,Tripsacum dactyloides,ML-29,9/22/2020,BNJ
+td11,76,Tripsacum dactyloides,ML-33,9/22/2020,BNJ
+td12,77,Tripsacum dactyloides,ML-34,9/22/2020,BNJ
+td13,90,Tripsacum dactyloides,ML-46,9/22/2020,BNJ
+td14,67,Tripsacum dactyloides,ML-50,9/22/2020,BNJ
+td15,72,Tripsacum dactyloides,ML-49,9/22/2020,BNJ
+td16,71,Tripsacum dactyloides,ML-54,9/22/2020,BNJ
+td17,72,Tripsacum dactyloides,ML,9/22/2020,BNJ
+td18,71,Tripsacum dactyloides,ML,9/22/2020,BNJ
+td19,79,Tripsacum dactyloides,ML,9/22/2020,BNJ
+td20,80,Tripsacum dactyloides,ML,9/22/2020,BNJ
+vo1,137,Verbesina occidentalis,ML-01,9/22/2020,BNJ
+vo2,139,Verbesina occidentalis,ML-02,9/22/2020,BNJ
+vo3,126,Verbesina occidentalis,ML-03,9/22/2020,BNJ
+vo4,127,Verbesina occidentalis,ML-04,9/22/2020,BNJ
+vo5,127,Verbesina occidentalis,ML-08,9/22/2020,BNJ
+vo6,141,Verbesina occidentalis,ML-07,9/22/2020,BNJ
+vo7,134,Verbesina occidentalis,ML-06,9/22/2020,BNJ
+vo8,123,Verbesina occidentalis,ML-05,9/22/2020,BNJ
+vo9,125,Verbesina occidentalis,ML-10,9/22/2020,BNJ
+vo10,128,Verbesina occidentalis,ML-11,9/22/2020,BNJ
+vo11,114,Verbesina occidentalis,ML-12,9/22/2020,BNJ
+vo12,118,Verbesina occidentalis,ML-16,9/22/2020,BNJ
+vo13,110,Verbesina occidentalis,ML-15,9/22/2020,BNJ
+vo14,113,Verbesina occidentalis,ML-14,9/22/2020,BNJ
+vo15,112,Verbesina occidentalis,ML-13,9/22/2020,BNJ
+vo16,147,Verbesina occidentalis,ML-17,9/22/2020,BNJ
+vo17,154,Verbesina occidentalis,ML-18,9/22/2020,BNJ
+vo18,153,Verbesina occidentalis,ML-33,9/22/2020,BNJ
+vo19,171,Verbesina occidentalis,ML-37,9/22/2020,BNJ
+vo20,146,Verbesina occidentalis,ML-50,9/22/2020,BNJ
+pp1,29,Poa pratensis,ML-18,9/22/2020,BNJ
