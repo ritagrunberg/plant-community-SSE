@@ -164,6 +164,19 @@ biomass <- biomass %>%
 
 # merge with community data 
 plant_community_biomass <- merge(plant_community_diversity, biomass, by = c("Plot", "Year")) 
+
+sorted_biomass_2018 <- plotbiomass_2018 %>%  
+  group_by(Plot, Year, Biomass.category) %>%
+  summarise(total_biomass = (`Plot.biomass(g/m^2)`))
+sorted_biomass_2018 <- merge(sorted_biomass_2018, plot_treatment, by =c('Plot'))
+
+sorted_biomass_2018 %>%
+  ggplot()+
+  geom_boxplot(aes(x= Treat, y = total_biomass, fill=Biomass.category))+ 
+  rita_theme+
+  labs(x = "",  y = bquote('log'[10]~' plant biomass (g '~m^-2*')'))+
+  scale_fill_manual(values=c('#a6611a','#018571','#f5f5f5','#80cdc1','#dfc27d'))+
+  theme(legend.position=c(0.13,0.85))
 ```
 
 ```{r parasite AUDPS cross species}
@@ -295,8 +308,8 @@ Get community weighted mean for max plant height
 cwm_height <- plant_tidy %>% 
   filter(Max_height_cm >0)%>% # only include sp with height data
   filter(cover >0)%>% # remove sp with zero cover
-  group_by(Plot, Year, Treat) %>%
-  summarise(Height_cwm = weighted.mean(Max_height_cm, cover),
+  group_by(Plot, Year, Treat) %>% # group by treatment * year factors 
+  summarise(Height_cwm = weighted.mean(Max_height_cm, cover), # trait * weighted by abundance 
             total_cover = sum(cover)) %>%
   mutate(Year = as.factor(Year))
 
@@ -495,6 +508,8 @@ SSE_prevalence_spp2 <- SSE_prevalence_spp %>%
   filter(parasite %in% c("Anthracnose","CRust", "Rhiz")) %>%
   filter(Month %in% c("May", "June" , "July" , "August", "September", "October", "November"))
 
+
+
 # list for loop
 year_list <- unique(SSE_prevalence_spp2$Year) 
 plot_list <- unique(SSE_prevalence_spp2$Plot)
@@ -596,76 +611,96 @@ plant_SSE <- plant_SSE %>% mutate(Plot = as.factor(Plot),
 ```
 
 ```{r fourth corner}
-library(mvabund)
-
-climate_sub <- climate_data_durham %>% 
+# library(mvabund)
+# 
+climate_sub <- climate_data_durham %>%
   filter(Year %in% c("2017", "2018", "2019")) %>%
   filter(Month %in% c("May", "June" , "July" , "August", "September", "October", "November"))%>%
   group_by(Year)%>%
-  summarise(total_rain = sum(P_MONTHLY_CALC))%>%
-  select(Year, total_rain)
+  summarise(total_rain = sum(P_MONTHLY_CALC), ppt_seasonality = sd(P_MONTHLY_CALC), temp_seasonality = sd(T_MONTHLY_MAX))%>%
+  select(Year, total_rain, ppt_seasonality, temp_seasonality)
 
-height_plant <- plant_tidy %>% 
-  #group_by(Species)%>%
-  filter(Max_height_cm >0)%>%
-  group_by(Species)%>%
-  mutate(total_cover =sum(cover))%>%
-  ungroup() %>% 
-  filter(total_cover >0)%>%
-  select(-c(total_cover))
+seasonppt <-climate_sub %>%
+  mutate(Year = as.factor(Year))%>%
+  ggplot()+
+  geom_point(aes(x=Year, y = ppt_seasonality), size=4)+
+  labs(x="", y ="precipitation seasonality")+
+    ylim(c(30,90))+
+  rita_theme
 
-cover_matrix <- height_plant %>% 
-  spread(Species, cover) %>% 
- # replace(is.na(.), 0) %>% 
-#  select(c(1:2, 4, 15, 18, 23,25:55)) %>%
-  select(c(1:2, 4,13, 25:45)) %>%
-  replace(is.na(.), 0)%>%
-  #group_by(Plot, Year, Treat, Origin, Growth, Max_height_cm) %>%
-  group_by(Plot, Year, Treat, AUDPS_parasite) %>%
-  summarise_each(funs(sum)) %>%
-  arrange(Plot, Year)
+seasontemp <-climate_sub %>%
+  mutate(Year = as.factor(Year))%>%
+  ggplot()+
+  geom_point(aes(x=Year, y = temp_seasonality), size=4, pch=21)+
+  labs(x="", y ="temperature seasonality")+
+  ylim(c(4,7))+
+  rita_theme
 
-trait_matrix <- plant_tidy %>% 
-  #group_by(Species)%>%
-  filter(Max_height_cm >0)%>%
-  filter(Max_height_cm >0)%>%
-  group_by(Species)%>%
-  mutate(total_cover =sum(cover))%>%
-  ungroup() %>% 
-  filter(total_cover >0)%>%
-  select(-c(total_cover))%>%
-  group_by(Species) %>% 
-  group_by(Species,Origin, Growth) %>% 
-  summarise_at(c('Max_height_cm'), mean)
-
-YR_matrix <- cover_matrix %>% 
-  ungroup()%>% 
-  mutate(obs = 1) %>%
-  spread(Year, obs)%>%
-  select(c('2017', '2018', '2019'))%>%
-  replace(is.na(.), 0)
-
-TRT_matrix <- cover_matrix %>% 
-  ungroup()%>% 
-  mutate(obs = 1) %>%
-  spread(Treat, obs)%>%
-  arrange(Plot)%>%
-  select(c( 'C->R->P', 'Control', 'CR->P', "CRP"))%>%
-  replace(is.na(.), 0)
-
-#envi_matrix <- cbind(YR_matrix, TRT_matrix)
-p_matrix <- cover_matrix %>% 
-  ungroup() %>%
-  select(Plot, Year, AUDPS_parasite)
-
-#envi_matrix <- merge(p_matrix, climate_sub, by =c("Year")) %>%
- # select(AUDPS_parasite, total_rain)
-#envi_matrix<- cover_matrix %>% select(c(Year, Treat))
-
-
-abun_matrix <- cover_matrix %>% 
-  ungroup()%>%
-  select(5:25)
+#jpeg(file="envi_seasonality.jpeg", width = 90, height = 180, units = 'mm', res = 300)
+ggarrange(seasonppt, seasontemp, ncol=1, nrow=2, labels = 'AUTO')
+#dev.off()
+# 
+# height_plant <- plant_tidy %>% 
+#   #group_by(Species)%>%
+#   filter(Max_height_cm >0)%>%
+#   group_by(Species)%>%
+#   mutate(total_cover =sum(cover))%>%
+#   ungroup() %>% 
+#   filter(total_cover >0)%>%
+#   select(-c(total_cover))
+# 
+# cover_matrix <- height_plant %>% 
+#   spread(Species, cover) %>% 
+#  # replace(is.na(.), 0) %>% 
+# #  select(c(1:2, 4, 15, 18, 23,25:55)) %>%
+#   select(c(1:2, 4,13, 25:45)) %>%
+#   replace(is.na(.), 0)%>%
+#   #group_by(Plot, Year, Treat, Origin, Growth, Max_height_cm) %>%
+#   group_by(Plot, Year, Treat, AUDPS_parasite) %>%
+#   summarise_each(funs(sum)) %>%
+#   arrange(Plot, Year)
+# 
+# trait_matrix <- plant_tidy %>% 
+#   #group_by(Species)%>%
+#   filter(Max_height_cm >0)%>%
+#   filter(Max_height_cm >0)%>%
+#   group_by(Species)%>%
+#   mutate(total_cover =sum(cover))%>%
+#   ungroup() %>% 
+#   filter(total_cover >0)%>%
+#   select(-c(total_cover))%>%
+#   group_by(Species) %>% 
+#   group_by(Species,Origin, Growth) %>% 
+#   summarise_at(c('Max_height_cm'), mean)
+# 
+# YR_matrix <- cover_matrix %>% 
+#   ungroup()%>% 
+#   mutate(obs = 1) %>%
+#   spread(Year, obs)%>%
+#   select(c('2017', '2018', '2019'))%>%
+#   replace(is.na(.), 0)
+# 
+# TRT_matrix <- cover_matrix %>% 
+#   ungroup()%>% 
+#   mutate(obs = 1) %>%
+#   spread(Treat, obs)%>%
+#   arrange(Plot)%>%
+#   select(c( 'C->R->P', 'Control', 'CR->P', "CRP"))%>%
+#   replace(is.na(.), 0)
+# 
+# #envi_matrix <- cbind(YR_matrix, TRT_matrix)
+# p_matrix <- cover_matrix %>% 
+#   ungroup() %>%
+#   select(Plot, Year, AUDPS_parasite)
+# 
+# #envi_matrix <- merge(p_matrix, climate_sub, by =c("Year")) %>%
+#  # select(AUDPS_parasite, total_rain)
+# #envi_matrix<- cover_matrix %>% select(c(Year, Treat))
+# 
+# 
+# abun_matrix <- cover_matrix %>% 
+#   ungroup()%>%
+#   select(5:25)
 
 #abun_spp <- mvabund(abun_matrix)
 #plot(abun_spp~cover_matrix$Treat)
@@ -709,110 +744,122 @@ plant_species_year <- plant_tidy %>%
   group_by(Species) %>% 
   filter(sum(mean)>0)
 
-#jpeg(file="plant_species_cover.jpeg", width = 280, height = 120, units = 'mm', res = 300)
-plant_species %>% 
-  filter(mean >0) %>% # filter(Group == "Grasses") %>% 
-  ggplot()+ 
-  geom_point(aes(x=log10(mean), y = Species, fill=Treat#, shape=Origin
-                 ), pch=21, size=2)+
-  facet_wrap(~Year) + 
-  theme_bw()+
-  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
-                    guide=guide_legend(override.aes=list(shape=21)), 
-                    labels = c("Never", "Always", "CR->P", "CRP"))+
-  labs(x="log cover", y="") #+
-    #scale_shape_manual(values=c(21,25,22)) 
-#dev.off()
-
-plant_species %>% filter(var>0) %>% mutate(Year=as.factor(Year))%>%
-  ggplot(aes(x= log10(mean), y =log10(var), fill=Year, group=Year))+
-  geom_point(aes(x= log10(mean), y =log10(var), fill=Year, group=Year), pch=21, size=2)+
-  geom_smooth(se=FALSE, method = 'lm', aes(color=Year))+
-  facet_wrap(~Treat)+theme_bw()+
-  scale_fill_manual(values=c('#1b9e77','#d95f02','#7570b3'))+
-  scale_color_manual(values=c('#1b9e77','#d95f02','#7570b3'))+
-  labs(x="log mean cover", y = "log variance cover")
-
-#jpeg(file="mean_var_plant_taxa_SSE.jpeg", width = 180, height = 180, units = 'mm', res = 300)
-plant_species %>% filter(var>0) %>% mutate(Year=as.factor(Year))%>%
-  ggplot(aes(x= log10(mean), y =log10(var), fill=Treat, group=Treat))+
-  geom_point(aes(x= log10(mean), y =log10(var), fill=Treat, group=Treat), pch=21, size=2)+
-  geom_smooth(se=FALSE, method = 'lm', aes(color=Treat))+
-  facet_wrap(~Year)+theme_bw()+
-  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
-                    guide=guide_legend(override.aes=list(shape=21)), 
-                    labels = c("Never", "Always", "CR->P", "CRP"))+
-  scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
-                     labels = c("Never", "Always", "CR->P", "CRP"))+
-  labs(x="log mean cover", y = "log variance cover")
-#dev.off()
-
-
-sd <-plant_species %>% filter(Species=='Schedonorus arundinaceus') %>% mutate(Year=as.factor(Year))%>%
-  ggplot(aes(x=Year, y = sd, fill=Treat))+
-  geom_point(aes(x=Year, y = sd, fill=Treat, shape=Year), size=3)+theme_bw()+
-    scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
-                    guide=guide_legend(override.aes=list(shape=21)), 
-                    labels = c("Never", "Always", "CR->P", "CRP"))+
-      scale_shape_manual(values=c(21,25,22)) + 
-    labs(x="", y = "sd fescue cover")
-
-mean_var <-plant_species %>% filter(Species=='Schedonorus arundinaceus') %>% mutate(Year=as.factor(Year))%>%
-  ggplot(aes(x=log10(mean), y =log10(var), fill=Treat))+
-  geom_point(aes(x=log10(mean), y =log10(var), fill=Treat, shape=Year), size=3)+theme_bw()+
-    scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
-                    guide=guide_legend(override.aes=list(shape=21)), 
-                    labels = c("Never", "Always", "CR->P", "CRP"))+
-    scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
-                     labels = c("Never", "Always", "CR->P", "CRP"))+
-    scale_shape_manual(values=c(21,25,22)) + 
-    geom_smooth(se=FALSE, method = 'lm', aes(color=Treat))+
-    labs(x="log mean fescue cover", y = "log var fescue cover")
-
-#jpeg(file="fescue_variation_SSE.jpeg", width = 180, height = 180, units = 'mm', res = 300)
-ggarrange(sd, mean_var, ncol=2, nrow=1, common.legend = TRUE)
-#dev.off()
+# #jpeg(file="plant_species_cover.jpeg", width = 280, height = 120, units = 'mm', res = 300)
+# plant_species %>% 
+#   filter(mean >0) %>% # filter(Group == "Grasses") %>% 
+#   ggplot()+ 
+#   geom_point(aes(x=log10(mean), y = Species, fill=Treat#, shape=Origin
+#                  ), pch=21, size=2)+
+#   facet_wrap(~Year) + 
+#   theme_bw()+
+#   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21)), 
+#                     labels = c("Never", "Always", "CR->P", "CRP"))+
+#   labs(x="log cover", y="") #+
+#     #scale_shape_manual(values=c(21,25,22)) 
+# #dev.off()
+# 
+# plant_species %>% filter(var>0) %>% mutate(Year=as.factor(Year))%>%
+#   ggplot(aes(x= log10(mean), y =log10(var), fill=Year, group=Year))+
+#   geom_point(aes(x= log10(mean), y =log10(var), fill=Year, group=Year), pch=21, size=2)+
+#   geom_smooth(se=FALSE, method = 'lm', aes(color=Year))+
+#   facet_wrap(~Treat)+theme_bw()+
+#   scale_fill_manual(values=c('#1b9e77','#d95f02','#7570b3'))+
+#   scale_color_manual(values=c('#1b9e77','#d95f02','#7570b3'))+
+#   labs(x="log mean cover", y = "log variance cover")
+# 
+# #jpeg(file="mean_var_plant_taxa_SSE.jpeg", width = 180, height = 180, units = 'mm', res = 300)
+# plant_species %>% filter(var>0) %>% mutate(Year=as.factor(Year))%>%
+#   ggplot(aes(x= log10(mean), y =log10(var), fill=Treat, group=Treat))+
+#   geom_point(aes(x= log10(mean), y =log10(var), fill=Treat, group=Treat), pch=21, size=2)+
+#   geom_smooth(se=FALSE, method = 'lm', aes(color=Treat))+
+#   facet_wrap(~Year)+theme_bw()+
+#   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21)), 
+#                     labels = c("Never", "Always", "CR->P", "CRP"))+
+#   scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+#                      labels = c("Never", "Always", "CR->P", "CRP"))+
+#   labs(x="log mean cover", y = "log variance cover")
+# #dev.off()
+# 
+# 
+# sd <-plant_species %>% filter(Species=='Schedonorus arundinaceus') %>% mutate(Year=as.factor(Year))%>%
+#   ggplot(aes(x=Year, y = sd, fill=Treat))+
+#   geom_point(aes(x=Year, y = sd, fill=Treat, shape=Year), size=3)+theme_bw()+
+#     scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21)), 
+#                     labels = c("Never", "Always", "CR->P", "CRP"))+
+#       scale_shape_manual(values=c(21,25,22)) + 
+#     labs(x="", y = "sd fescue cover")
+# 
+# mean_var <-plant_species %>% filter(Species=='Schedonorus arundinaceus') %>% mutate(Year=as.factor(Year))%>%
+#   ggplot(aes(x=log10(mean), y =log10(var), fill=Treat))+
+#   geom_point(aes(x=log10(mean), y =log10(var), fill=Treat, shape=Year), size=3)+theme_bw()+
+#     scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21)), 
+#                     labels = c("Never", "Always", "CR->P", "CRP"))+
+#     scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+#                      labels = c("Never", "Always", "CR->P", "CRP"))+
+#     scale_shape_manual(values=c(21,25,22)) + 
+#     geom_smooth(se=FALSE, method = 'lm', aes(color=Treat))+
+#     labs(x="log mean fescue cover", y = "log var fescue cover")
+# 
+# #jpeg(file="fescue_variation_SSE.jpeg", width = 180, height = 180, units = 'mm', res = 300)
+# ggarrange(sd, mean_var, ncol=2, nrow=1, common.legend = TRUE)
+# #dev.off()
 ```
 
 ```{r rank abundance , echo=FALSE}
-plant_dist <- plant_tidy %>% 
-  group_by(Species, Treat, Year) %>%
-  summarise_at(c("cover"), mean) %>%
-  group_by(Species, Treat, Year) %>%
-  filter((cover)>0) %>% 
-  ungroup () %>%
-  group_by(Treat, Year) %>%
-  mutate(ranking = dense_rank(desc(cover)),
-         ranking = as.factor(ranking),
-         Year = as.factor(Year)) 
-
-#jpeg(file="plant_rank_cover.jpeg", width = 270, height = 90, units = 'mm', res = 300)
-ggplot(plant_dist, aes(x=ranking, y = log10(cover), fill=Treat, group=Treat))+
-  geom_line(aes(col=Treat), lwd=1)+
-  geom_point(pch=21, size=1.5)+
-  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
-                    guide=guide_legend(override.aes=list(shape=21)), 
-                    labels = c("Never", "Always", "CR->P", "CRP")) +
-  scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'))+
-  theme_bw(base_size = 10)+
-  guides(color=FALSE)+
-  theme(axis.text.x = element_text( angle=90))+
-  facet_wrap(~Year #, scales = 'free'
-             )+
-  guides(fill=guide_legend("Treatment",  keywidth=0.12,
-                           keyheight=0.12, override.aes = list(shape=21),
-                           default.unit="inch"), color= FALSE)+
-  theme(legend.title = element_text(size=7, face="bold"),
-        legend.text = element_text(size=6.5))+ 
-  theme(legend.position=c(0.25,0.80))+
-  labs(x="rank",y= "log cover")
-#dev.off()
+# plant_dist <- plant_tidy %>% 
+#   group_by(Species, Treat, Year) %>%
+#   summarise_at(c("cover"), mean) %>%
+#   group_by(Species, Treat, Year) %>%
+#   filter((cover)>0) %>% 
+#   ungroup () %>%
+#   group_by(Treat, Year) %>%
+#   mutate(ranking = dense_rank(desc(cover)),
+#          ranking = as.factor(ranking),
+#          Year = as.factor(Year)) 
+# 
+# #jpeg(file="plant_rank_cover.jpeg", width = 270, height = 90, units = 'mm', res = 300)
+# ggplot(plant_dist, aes(x=ranking, y = log10(cover), fill=Treat, group=Treat))+
+#   geom_line(aes(col=Treat), lwd=1)+
+#   geom_point(pch=21, size=1.5)+
+#   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21)), 
+#                     labels = c("Never", "Always", "CR->P", "CRP")) +
+#   scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'))+
+#   theme_bw(base_size = 10)+
+#   guides(color=FALSE)+
+#   theme(axis.text.x = element_text( angle=90))+
+#   facet_wrap(~Year #, scales = 'free'
+#              )+
+#   guides(fill=guide_legend("Treatment",  keywidth=0.12,
+#                            keyheight=0.12, override.aes = list(shape=21),
+#                            default.unit="inch"), color= FALSE)+
+#   theme(legend.title = element_text(size=7, face="bold"),
+#         legend.text = element_text(size=6.5))+ 
+#   theme(legend.position=c(0.25,0.80))+
+#   labs(x="rank",y= "log cover")
+# #dev.off()
 
 ```
 
 To determine the effectiveness of the fungicide treatments on pathogen epidemics we used a repeated-measures MANOVA.  The AUDPS of Anthracnose, Rhizoctonia and Rust were the three response vectors, and fungicide treatment, year, and treatment*year interactions were included as fixed effects and plot nested within year was designated as a mixed effect. 
 
 Univariate ANOVAS were used to examine individual dependent variables contribution to main effects 
+
+
+First look at cross species AUDPS 
+```{r disease_anova}
+disease_anova <- aov(AUDPS_parasite ~ Year * Treat + Error(Plot/(Year)), plant_SSE)
+summary(disease_anova)
+
+cross_disease_emm <- emmeans(disease_anova , ~ Year*Treat)
+pairs(cross_disease_emm)
+```
+
+Visualization 
 
 ```{r disease graphic, echo=FALSE}
 
@@ -822,30 +869,46 @@ disease <- plant_SSE %>%
          std = sd(AUDPS_parasite)) %>% 
   ungroup() %>% mutate(Year = as.factor(Year))
 
-dodge <- position_dodge(width = 0.35)
+dodge <- position_dodge(width = 0.75)
 
-#jpeg(file="fescue_cover_SSE.jpeg", width = 120, height = 90, units = 'mm', res = 300)
+#jpeg(file="cross-species_AUDPS.jpeg", width = 120, height = 90, units = 'mm', res = 300)
 ggplot(disease, aes(x= Year, y = AUDPS_parasite, group=Treat))+
   rita_theme+
   geom_point(aes(x=Year, y = AUDPS_parasite, group=Treat, fill=Treat), 
-             pch=21,data =disease, position = dodge, size=1, alpha=0.35)+
+             pch=21,data =disease,           
+             position=position_jitterdodge(dodge.width=0.75,  jitter.width = 0.25), 
+             size=1, alpha=0.35)+
   geom_errorbar(aes(ymin=mean - std, ymax=mean + std),
                 position=dodge, width=0.1) +
   geom_point(aes(x=Year, y =mean, fill=Treat), 
-             pch=21, size=3.5, position=dodge)+
+             pch=21, size=2.75, position=dodge)+
   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP")) +
-  scale_color_manual(values=c('#ffeda0','#a1dab4','#41b6c4','#225ea8')) + 
+  scale_color_manual(values=c('#ffeda0','#a1dab4','#41b6c4','#225ea8')) +
+  guides(fill=guide_legend("Treatment",  keywidth=0.12,
+                           keyheight=0.12, override.aes = list(shape=21),
+                           default.unit="inch"), color= FALSE)+
+  annotate("text", x = 0.70, y = 160, label = "a", size=2) + #17 never sprayed
+  annotate("text", x = 0.90, y = 110, label = "d", size=2) +  #17 always sprayed
+  annotate("text", x = 1.10, y = 140, label = "b", size=2) +  #17 cr->p
+  annotate("text", x = 1.30, y = 130, label = "c", size=2) +  #17 crp
+  
+  annotate("text", x = 1.70, y = 160, label = "a", size=2) + #18 never sprayed
+  annotate("text", x = 1.90, y = 110, label = "c", size=2) +  #18 always sprayed
+  annotate("text", x = 2.10, y = 140, label = "b", size=2) +  #18 cr->p
+  annotate("text", x = 2.30, y = 130, label = "c", size=2) +  #18 crp
+  
+  annotate("text", x = 2.70, y = 130, label = "a", size=2) + #19 never sprayed
+  annotate("text", x = 2.90, y = 45, label = "c", size=2) +  #19 always sprayed
+  annotate("text", x = 3.10, y = 70, label = "b", size=2) +  #19 cr->p
+  annotate("text", x = 3.30, y = 45, label = "c", size=2)+
   guides(color=FALSE)+  
   labs(x="", y="Cross-species AUDPS")
 #dev.off()
 ```
 
-```{r disease_anova}
-disease_anova <- aov(AUDPS_parasite ~ Year * Treat + Error(Plot/(Year)), plant_SSE)
-summary(disease_anova)
-```
+
 
 ```{r parasite_spp, echo=FALSE}
 auc_parasite_all <- plant_SSE %>% 
@@ -855,7 +918,7 @@ auc_parasite_all <- plant_SSE %>%
          std = sd(AUDPS_parasite)) %>%
   dplyr::select(Year, Treat, parasite, AUDPS_parasite, mean , std)
 
-dodge <- position_dodge(width = 0.5)
+dodge <- position_dodge(width = 0.75)
 
 #jpeg(file="AUDPS_SSE_parasite_spp.jpeg", width = 280, height = 120, units = 'mm', res = 300)
 ggplot(auc_parasite_all, aes(x= Year, y=AUDPS_parasite, group=Treat)) + 
@@ -904,7 +967,7 @@ anthr.treat.eta
 # RHIZ MODEL
 rhiz.md <- aov((Rhiz) ~ Treat * Year + Error(Plot/Year), data=plant_SSE)
 summary(rhiz.md)
-EtaSq(rhiz.md, type=1, anova=TRUE)
+#EtaSq(rhiz.md, type=1, anova=TRUE)
 
 rhiz.year.eta <-(summary(rhiz.md)[["Error: Plot:Year"]][[1]]["Year" , "F value"]*summary(rhiz.md)[["Error: Plot:Year"]][[1]]["Year" , "Df"])/(summary(rhiz.md)[["Error: Plot:Year"]][[1]]["Year" , "F value"]*summary(rhiz.md)[["Error: Plot:Year"]][[1]]["Year" , "Df"]+summary(rhiz.md)[["Error: Plot:Year"]][[1]]["Residuals" , "Df"])
 rhiz.year.eta
@@ -917,7 +980,7 @@ rhiz.treat.eta
 # RUST MODEL
 rust.md <- aov((Rust) ~ Treat * Year + Error(Plot/Year), data=plant_SSE)
 summary(rust.md)
-EtaSq(rust.md, type=1, anova=TRUE)
+#EtaSq(rust.md, type=1, anova=TRUE)
 
 rust.year.eta <-(summary(rust.md)[["Error: Plot:Year"]][[1]]["Year" , "F value"]*summary(rust.md)[["Error: Plot:Year"]][[1]]["Year" , "Df"])/(summary(rust.md)[["Error: Plot:Year"]][[1]]["Year" , "F value"]*summary(rust.md)[["Error: Plot:Year"]][[1]]["Year" , "Df"]+summary(rust.md)[["Error: Plot:Year"]][[1]]["Residuals" , "Df"])
 rust.year.eta
@@ -996,9 +1059,9 @@ ggplot(fescue, aes(x= Year, y = Schedonorus_arundinaceus, group=Treat))+
   guides(fill=guide_legend("Treatment",  keywidth=0.12,
                            keyheight=0.12, override.aes = list(shape=21),
                            default.unit="inch"), color= FALSE)+
-  annotate("text", x = 1, y = 120, label = "A", size=4) + #2017
-  annotate("text", x = 2, y = 120, label = "B", size=4) + #2018
-  annotate("text", x = 3, y = 120, label = "B", size=4) +  #2019
+  annotate("text", x = 1, y = 110, label = "A", size=4) + #2017
+  annotate("text", x = 2, y = 100, label = "C", size=4) + #2018
+  annotate("text", x = 3, y = 105, label = "B", size=4) +  #2019
   labs(x="", y="% Fescue cover")
 #dev.off()
   
@@ -1089,16 +1152,19 @@ trt_diversity <- plant_SSE %>%
 
 # first sp richness 
 err_stdev_sp <- aes(ymin=mean_sp - sd_sp, ymax=mean_sp + sd_sp)
+err_95ci_sp <- aes(ymin=10^(lower.CL), ymax=10^(ymax=upper.CL))
 dodge <- position_dodge(width = 0.75)
 
 #jpeg(file="plant_richness_SSE.jpeg",width = 90, height = 90,  units = 'mm',  res = 300) 
-ggplot(data=trt_diversity, aes(x=Year, y = (mean_sp), group=Treat))+
+ggplot(data=sprichout, aes(x=Year, y = 10^(emmean), group=Treat))+
   rita_theme+
   geom_point(aes(x=Year, y = (sp_rich), group=Treat, fill=Treat), pch=21, data=plant_SSE, 
-             position=position_jitterdodge(dodge.width=0.75,  jitter.width = 0.3), alpha=0.35, size = 1)+
+             position=position_jitterdodge(dodge.width=0.75,  jitter.width = 0.3), 
+             alpha=0.35, size = 1)+
   # geom_violin(aes(x=Year, y = sp_rich, group=Treat, fill=Treat),  data=plant_SSE, alpha=0.35)+
- # geom_errorbar(err_stdev_sp, position=dodge, width=0.1) +
-  geom_point(aes(x=Year, y = (10^(emmean)), fill=Treat), 
+  #geom_errorbar(err_stdev_sp, position=dodge, width=0.1) +
+  geom_errorbar((err_95ci_sp), position=dodge, width=0.1, data=sprichout) +
+   geom_point(aes(x=Year, y = (10^(emmean)), fill=Treat), 
              pch=21, size=2.75, position=dodge, data=sprichout)+
   scale_color_manual(values=c('#ffeda0','#a1dab4','#41b6c4','#225ea8')) + 
   labs(x="", y="Richness") +
@@ -1775,9 +1841,9 @@ Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’
 ```{r permanova BC}
 set.seed(1234567) #make sure to set seed to get the same result, this is a permutation based method 
 #ordO<-metaMDS(plant.2, distance="bray", trymax = 500, autotransform=FALSE) # not transformed 
-ordO
-fit<-envfit(ordO, plot.2[,6:10],perm=999)#fits vectors
-fit # prints coordinates for host vectors and test of sig
+#ordO
+#fit<-envfit(ordO, plot.2[,6:10],perm=999)#fits vectors
+#fit # prints coordinates for host vectors and test of sig
 
 #plant_bc.0<-adonis(formula=plant.2 ~ Treat + Year, data=plot.2, permutations=999, method="bray")
 #plant_bc.0
@@ -2538,7 +2604,7 @@ for (i in plot_list){
   temporal_distance <-rbind(temporal_distance, d_cent)
 }
 
-col_head <- c('Plot', '2017 - 2018',  '2018 - 2019' , '2017 - 2019')
+col_head <- c('Plot', 'TIME2017_2018',  'TIME2018_2019' , '2017 - 2019')
 colnames(temporal_distance) <- col_head
 
 temporal_dissimilarity <- merge(plot_treatment, temporal_distance, by =c("Plot"))
@@ -2548,7 +2614,7 @@ temporal_dissimilarity <- merge(plot_treatment, temporal_distance, by =c("Plot")
 ```{r temporal change graphic}
 
 temp_tidy <- temporal_dissimilarity %>% 
-  gather(Time, distance, 9) %>%
+  gather(Time, distance, 7:8) %>%
   group_by(Plot, Treat, Time) %>%
   summarise_at(c("distance"), mean)
 
@@ -2580,6 +2646,7 @@ temp_tidy %>% ggplot(aes(x= Treat, y = distance, fill=Treat))+
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP")) +
   guides(colour=FALSE, fill=FALSE)+
+  facet_wrap(~Time)+
   labs(x="", y="Temporal community dissimilarity (2017-2019)")
 
 
@@ -2603,123 +2670,384 @@ tempdist.mod2 <- aov(log10(distance) ~ Treat + Time + Error(Plot/Time), data= fi
 summary(tempdist.mod2)
 
 ```
+```{r temp comm and parasite}
+change_disease <- plant_SSE %>% 
+  group_by(Plot)%>%
+  mutate(Anthracnose_17 =Anthracnose - Anthracnose[Year == '2017'],
+         Anthracnose_18 =Anthracnose - Anthracnose[Year == '2018'],
+         Rhiz_17 =Rhiz- Rhiz[Year == '2017'],
+         Rhiz_18 =Rhiz - Rhiz[Year == '2018'],
+         Rust_17 =Rust- Rust[Year == '2017'],
+         Rust_18 =Rust - Rust[Year == '2018'],
+         fescue_17 = Schedonorus_arundinaceus- Schedonorus_arundinaceus[Year == '2017'],
+        fescue_18 = Schedonorus_arundinaceus- Schedonorus_arundinaceus[Year == '2018'],
+        rich_17 = sp_rich - sp_rich[Year == '2017'],
+        rich_18 = sp_rich - sp_rich[Year == '2018'],
+        parasite_17 = AUDPS_parasite - AUDPS_parasite[Year =='2017'],
+        parasite_18 = AUDPS_parasite - AUDPS_parasite[Year =='2018'])%>%
+  dplyr::select(Plot, Year, Treat, 
+                Anthracnose_17, Anthracnose_18, 
+                Rhiz_17, Rhiz_18, 
+                Rust_17, Rust_18, 
+                fescue_17, fescue_18,
+                rich_17, rich_18,
+                parasite_17, parasite_18)
+
+change_disease_1718 <- change_disease  %>% 
+  filter(Year == '2018') %>% 
+  filter(Anthracnose_17 != 0) %>%
+  mutate(Time = 'TIME2017_2018')%>%
+  select(Plot, Time, Anthracnose_17, Rhiz_17,  Rust_17, 
+         fescue_17, rich_17, parasite_17)%>%
+  rename(Anthracnose ='Anthracnose_17', Rhiz = 'Rhiz_17', Rust = 'Rust_17', 
+         fescue = 'fescue_17', sp_rich = 'rich_17', pathogen = 'parasite_17')
+
+change_disease_1819 <- change_disease  %>% 
+  filter(Year == '2019') %>% 
+  filter(Anthracnose_18 != 0) %>%
+  mutate(Time = 'TIME2018_2019')%>%
+  select(Plot, Time, Anthracnose_18, Rhiz_18,  Rust_18, 
+         fescue_18, rich_18, parasite_18)%>%
+  rename(Anthracnose ='Anthracnose_18', Rhiz = 'Rhiz_18', Rust = 'Rust_18',
+         fescue = 'fescue_18', sp_rich = 'rich_18',  pathogen = 'parasite_18')
+
+epidemic_change <- rbind(change_disease_1718, change_disease_1819)
+
+disease_community_change <- merge(epidemic_change, temp_tidy, by =c("Plot", 'Time'))
+
+disease_c_tidy <- disease_community_change %>% 
+  gather(parasite, epidemic, 3:5)
+```
+
+```{r graphics for parasite change}
+# disease_community_change %>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1.25, col='red')+
+#   geom_vline(xintercept = 0, lty=2, lwd=1.25, col='black')+
+#   geom_point(aes(x=Anthracnose, y = Rhiz), pch=21, size=3)+ 
+#   geom_smooth(aes(x=Anthracnose, y = Rhiz), size =1.5,  se = FALSE, method='lm') +
+#   facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+#   )+
+#   labs(x='change in anthracnose epidemic', 
+#        y ='change in rhizoctonia epidemic')+
+#   theme_bw()
+# 
+# disease_community_change %>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1.25, col='red')+
+#   geom_vline(xintercept = 0, lty=2, lwd=1.25, col='black')+
+#   geom_point(aes(x=Rhiz, y = Rust), pch=21, size=3)+ 
+#   geom_smooth(aes(x=Rhiz, y = Rust), size =1.5,  se = FALSE, method='lm') +
+#   facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+#   )+
+#   labs(x='change in rhizoctonia epidemic', 
+#        y ='change in rust epidemic')+
+#   theme_bw()
+# 
+# disease_community_change %>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1.25, col='red')+
+#   geom_vline(xintercept = 0, lty=2, lwd=1.25, col='black')+
+#   geom_point(aes(x=Anthracnose, y = Rust), pch=21, size=3)+ 
+#   geom_smooth(aes(x=Anthracnose, y = Rust), size =1.5,  se = FALSE, method='lm') +
+#   facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+#   )+
+#   labs(x='change in anthracnose epidemic', 
+#        y ='change in rust epidemic')+
+#   theme_bw()
+
+```
+
+```{r graphics for disease change}
+disease_c_tidy%>%
+  ggplot()+
+  geom_hline(yintercept = 0, lty=2, lwd=1)+
+  geom_point(aes(x=log10(distance), y = epidemic, fill=parasite), pch=21, size=3)+ 
+  geom_smooth(aes(x=log10(distance), y = (epidemic), group=parasite, color=parasite), size =1.5,  se = FALSE, method='lm') +
+  facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+             )+
+  labs(x='change in host community composition (euclidean distance moved by a community)', 
+       y ='change in parasite epidemic (diff. in annual AUDPS)')+
+  theme_bw()
+
+disease_c_tidy%>%
+  ggplot()+
+  geom_hline(yintercept = 0, lty=2, lwd=1)+
+  geom_point(aes(x=log10(distance), y = epidemic, fill=Treat, shape=Time), size=3)+ 
+  geom_smooth(aes(x=log10(distance), y = (epidemic), group=Treat, color=Treat), size =1.5,  se = FALSE, method='lm') +
+  facet_wrap(~parasite*Time,ncol=3, nrow=2 , scales='free'
+             )+
+  scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'))+
+  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21))) + 
+  scale_shape_manual(values=c(21,25)) + 
+  labs(x='change in host community composition (euclidean distance moved by a community)', 
+       y ='change in parasite epidemic (diff. in annual AUDPS)')+
+  theme_bw()
+
+disease_c_tidy%>%
+  filter(Treat == 'C->R->P')%>%
+  ggplot()+
+  geom_hline(yintercept = 0, lty=2, lwd=1)+
+  geom_point(aes(x=log10(distance), y = epidemic, fill=Time, shape=Time), size=3)+ 
+  geom_smooth(aes(x=log10(distance), y = (epidemic), group=Time, color=Time), size =1.5,  se = FALSE, method='lm') +
+  facet_wrap(~parasite,ncol=3, nrow=1 , scales='free'
+  )+
+  scale_color_manual(values=c('blue', 'grey'))+
+  scale_fill_manual(values=c('blue', 'grey'),
+                    guide=guide_legend(override.aes=list(shape=21))) + 
+  scale_shape_manual(values=c(21,25)) + 
+  labs(x='change in host community composition (euclidean distance moved by a community)', 
+       y ='change in parasite epidemic (diff. in annual AUDPS)')+
+  theme_bw()
+
+# disease_c_tidy%>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1)+
+#   geom_point(aes(x=log10(distance), y = pathogen), pch=21, size=3)+ 
+#   geom_smooth(aes(x=log10(distance), y = pathogen), size =1.5,  se = FALSE, method='lm') +
+#   facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+#              )+
+#   labs(x='compositional host community change (euclidean distance moved by a community)', 
+#        y ='change in parasite epidemic (diff. in annual AUDPS)')+
+#   theme_bw()
+
+disease_c_tidy%>%
+  ggplot()+
+  geom_hline(yintercept = 0, lty=2, lwd=1.25, col='red')+
+  geom_vline(xintercept = 0, lty=2, lwd=1.25, col='blue')+
+  geom_point(aes(x=fescue, y = epidemic, fill=parasite), pch=21, size=3)+ 
+  geom_smooth(aes(x=fescue, y = (epidemic), group=parasite, color=parasite), size =1.5,  se = FALSE, method='lm') +
+  facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+  )+
+  labs(x='change in fescue cover', 
+       y ='change in parasite epidemic (diff. in annual AUDPS)')+
+  theme_bw()
+
+disease_c_tidy%>%
+  ggplot()+
+  geom_hline(yintercept = 0, lty=2, lwd=1)+
+  geom_vline(xintercept = 0, lty=2, lwd=1)+
+  geom_point(aes(x=fescue, y = epidemic, fill=Treat, shape=Time), size=3)+ 
+  geom_smooth(aes(x=fescue, y = (epidemic), group=Treat, color=Treat), size =1.5,  se = FALSE, method='lm') +
+  facet_wrap(~parasite*Time,ncol=2, nrow=3 , scales='free'
+  )+
+  scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'))+
+  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21))) + 
+  scale_shape_manual(values=c(21,25)) + 
+  labs(x='change in fescue cover', 
+       y ='change in parasite epidemic (diff. in annual AUDPS)')+
+  theme_bw()
+
+
+disease_c_tidy%>%
+  ggplot()+
+  geom_hline(yintercept = 0, lty=2, lwd=1.25, col='red')+
+  geom_vline(xintercept = 0, lty=2, lwd=1.25, col='blue')+
+  geom_point(aes(x=sp_rich, y = epidemic, fill=parasite), pch=21, size=3)+ 
+  geom_smooth(aes(x=sp_rich, y = (epidemic), group=parasite, color=parasite), size =1.5,  se = FALSE, method='lm') +
+  facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+  )+
+  labs(x='change plant richness', 
+       y ='change in parasite epidemic (diff. in annual AUDPS)')+
+  theme_bw()
+
+jpeg(file="richnes_epidemic_change.jpeg", width = 180, height = 270, units = 'mm', res = 300)
+disease_c_tidy%>%
+  ggplot()+
+  geom_hline(yintercept = 0, lty=2, lwd=1)+
+  geom_vline(xintercept = 0, lty=2, lwd=1)+
+  geom_point(aes(x=sp_rich, y = epidemic, fill=Treat, shape=Time), size=3)+ 
+  geom_smooth(aes(x=sp_rich, y = (epidemic), group=Treat, color=Treat), size =1.5,  se = FALSE, method='lm') +
+  facet_wrap(~parasite*Time,ncol=2, nrow=3 , scales='free'
+  )+
+  scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'))+
+  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+                    guide=guide_legend(override.aes=list(shape=21))) + 
+  scale_shape_manual(values=c(21,25)) + 
+  labs(x='change in plant richness', 
+       y ='change in parasite epidemic (diff. in annual AUDPS)')+
+  theme_bw()
+dev.off()
+
+# disease_c_tidy%>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1)+
+#   geom_point(aes(x=sp_rich, y = pathogen), pch=21, size=3)+ 
+#   geom_smooth(aes(x=sp_rich, y = pathogen), size =1.5,  se = FALSE, method='lm') +
+#   facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+#              )+
+#   labs(x='change in plant richness', 
+#        y ='change in parasite epidemic (diff. in annual AUDPS)')+
+#   theme_bw()
+
+# disease_c_tidy%>%
+#   ggplot()+
+#  # geom_hline(yintercept = 0, lty=2, lwd=1.25, col='red')+
+#   geom_point(aes(x=log10(distance), y = abs(sp_rich)), pch=21, size=3)+ 
+#   facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+#   )+
+#   labs(x='compositional host community change (euclidean distance moved by a community)', 
+#        y ='change in richness')+
+#   theme_bw()
+# 
+# 
+# disease_c_tidy%>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1.25, col='red')+
+#   geom_point(aes(x=log10(distance), y = sp_rich), pch=21, size=3)+ 
+#   facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+#   )+
+#   labs(x='compositional host community change (euclidean distance moved by a community)', 
+#        y ='change in richness')+
+#   theme_bw()
+```
+
+test if they differ
+```{r models for change}
+a.mod1 <- aov(Anthracnose ~Treat *log10(distance)*Time+Error(Plot/Time), data=disease_community_change )
+summary(a.mod1)
+
+r.mod1 <- aov(Rhiz ~Treat *log10(distance)*Time+Error(Plot/Time), data=disease_community_change )
+summary(r.mod1)
+
+ru.mod1 <- aov(Rust ~Treat *log10(distance)*Time+Error(Plot/Time), data=disease_community_change )
+summary(ru.mod1)
+
+```
+
+ugh temp and precip data
+
+```{r change temp and disease}
+climate_sub <- climate_data_durham %>% 
+  filter(Year %in% c("2017", "2018", "2019")) %>%
+  filter(Month %in% c("May", "June" , "July" , "August", "September", "October", "November"))%>%
+  group_by(Month, Year)%>%
+  group_by(Month)
+ # mutate(pptchange_17 = P_MONTHLY_CALC - P_MONTHLY_CALC[Year == '2017'],
+  #       pptchange_18 = P_MONTHLY_CALC - P_MONTHLY_CALC[Year == '2018'],
+   #      tempchange_17 = T_MONTHLY_MAX - T_MONTHLY_MAX [Year == '2017'],
+    #     tempchange_18 = T_MONTHLY_MAX  - T_MONTHLY_MAX [Year == '2018'])
+
+```
 
 ```{r parasite AUDPS over the entire experiment}
 # designate months as a factor; and put in order 
-SSE_prevalence_overall$Month = factor(SSE_prevalence_overall$Month, levels = month.name)
-# select target parasite species and months 
-#SSE_prevalence_overall <- SSE_prevalence_overall %>% 
- # filter(Month %in% c("May", "June" , "July" , "August", "September", "October", "November"))
-
-# list for loop
-#year_list <- unique(SSE_prevalence_overall$Year) 
-plot_list <- unique(SSE_prevalence_overall$Plot)
-auc_entire_time <- data.frame()
-
-#for(k in year_list){
-  for (i in plot_list){
-
-       test <- SSE_prevalence_overall %>% 
-        arrange(Month)%>%
-         arrange(Year) %>%
-        filter(Plot == "3") %>% 
-        mutate(time = seq(1,930, by =30)) %>% 
-        ungroup() %>%
-        dplyr::select(time, Month, prevalence_within_plot)
- 
-      test <- SSE_prevalence_overall %>% 
-        arrange(Year) %>%
-        arrange(Month)%>%
-        filter(Plot == i) %>% 
-        mutate(time = seq(1,930,by=30 )) %>% 
-        ungroup() %>%
-        dplyr::select(time, Month, prevalence_within_plot)
-      
-      AUC <- audps(test$prevalence_within_plot, test$time)
-      auc_test <- data.frame( i,  AUC)
-      auc_entire_time <- rbind(auc_entire_time, auc_test)
-
- # }
-}
-
-col_head <- c( "Plot",  "total_disease")
-colnames(auc_entire_time) <- col_head
-
-plot_change <- merge(final_temp, auc_entire_time, by ="Plot")
-head(plot_change)
+# SSE_prevalence_overall$Month = factor(SSE_prevalence_overall$Month, levels = month.name)
+# # select target parasite species and months 
+# #SSE_prevalence_overall <- SSE_prevalence_overall %>% 
+#  # filter(Month %in% c("May", "June" , "July" , "August", "September", "October", "November"))
+# 
+# # list for loop
+# #year_list <- unique(SSE_prevalence_overall$Year) 
+# plot_list <- unique(SSE_prevalence_overall$Plot)
+# auc_entire_time <- data.frame()
+# 
+# #for(k in year_list){
+#   for (i in plot_list){
+# 
+#        test <- SSE_prevalence_overall %>% 
+#         arrange(Month)%>%
+#          arrange(Year) %>%
+#         filter(Plot == "3") %>% 
+#         mutate(time = seq(1,930, by =30)) %>% 
+#         ungroup() %>%
+#         dplyr::select(time, Month, prevalence_within_plot)
+#  
+#       test <- SSE_prevalence_overall %>% 
+#         arrange(Year) %>%
+#         arrange(Month)%>%
+#         filter(Plot == i) %>% 
+#         mutate(time = seq(1,930,by=30 )) %>% 
+#         ungroup() %>%
+#         dplyr::select(time, Month, prevalence_within_plot)
+#       
+#       AUC <- audps(test$prevalence_within_plot, test$time)
+#       auc_test <- data.frame( i,  AUC)
+#       auc_entire_time <- rbind(auc_entire_time, auc_test)
+# 
+#  # }
+# }
+# 
+# col_head <- c( "Plot",  "total_disease")
+# colnames(auc_entire_time) <- col_head
+# 
+# plot_change <- merge(final_temp, auc_entire_time, by ="Plot")
+# head(plot_change)
 ```
 
 ```{r three parasite spp entire AUDPS}
-# select target parasite species and months 
-SSE_prevalence_spp3 <- SSE_prevalence_spp %>%
-  filter(parasite %in% c("Anthracnose","CRust", "Rhiz")) #%>%
- # filter(Month %in% c("May", "June" , "July" , "August", "September", "October", "November"))
-SSE_prevalence_spp3$Month = factor(SSE_prevalence_spp3$Month, levels = month.name)
-
-# list for loop
-plot_list <- unique(SSE_prevalence_spp3$Plot)
-parasite_list <- unique(SSE_prevalence_spp3$parasite)
-entire_auc_parasite_spp <- data.frame()
-
-
-for (i in plot_list){
-    for (j in parasite_list){
-    
-      #  test <- SSE_prevalence_spp3 %>% 
-      #    arrange (Month) %>%
-      #    arrange(Year)%>%
-      #    filter(Plot == "3") %>% 
-      #    filter(parasite == "Anthracnose") %>% 
-      #    mutate(time = seq(1,930,by=30 )) %>%
-      #    ungroup() %>%
-      #    dplyr::select(time, Month, prevalence_among_plants)
- 
-      test <- SSE_prevalence_spp3 %>% 
-        arrange(Month) %>%
-        arrange(Year)%>%
-        filter(Plot == i) %>% 
-        filter(parasite== j) %>%
-        mutate(time = seq(1,930,by=30 )) %>% 
-        ungroup() %>%
-        dplyr::select(time, Month, prevalence_among_plants)
-      
-      AUC <- audps(test$prevalence_among_plants, test$time)
-      auc_test <- data.frame(i, j, AUC)
-      entire_auc_parasite_spp <- rbind(entire_auc_parasite_spp, auc_test)
-  }
-}
-
-col_head <- c( "Plot", "parasite", "AUDPS_parasite_spp")
-colnames(entire_auc_parasite_spp) <- col_head
-
-
-plot_change_spp <- merge(final_temp, entire_auc_parasite_spp, by ="Plot")
-head(plot_change_spp)
+# # select target parasite species and months 
+# SSE_prevalence_spp3 <- SSE_prevalence_spp %>%
+#   filter(parasite %in% c("Anthracnose","CRust", "Rhiz")) #%>%
+#  # filter(Month %in% c("May", "June" , "July" , "August", "September", "October", "November"))
+# SSE_prevalence_spp3$Month = factor(SSE_prevalence_spp3$Month, levels = month.name)
+# 
+# # list for loop
+# # plot_list <- unique(SSE_prevalence_spp3$Plot)
+# parasite_list <- unique(SSE_prevalence_spp3$parasite)
+# entire_auc_parasite_spp <- data.frame()
+# 
+# 
+# for (i in plot_list){
+#     for (j in parasite_list){
+#     
+#       #  test <- SSE_prevalence_spp3 %>% 
+#       #    arrange (Month) %>%
+#       #    arrange(Year)%>%
+#       #    filter(Plot == "3") %>% 
+#       #    filter(parasite == "Anthracnose") %>% 
+#       #    mutate(time = seq(1,930,by=30 )) %>%
+#       #    ungroup() %>%
+#       #    dplyr::select(time, Month, prevalence_among_plants)
+#  
+#       test <- SSE_prevalence_spp3 %>% 
+#         arrange(Month) %>%
+#         arrange(Year)%>%
+#         filter(Plot == i) %>% 
+#         filter(parasite== j) %>%
+#         mutate(time = seq(1,930,by=30 )) %>% 
+#         ungroup() %>%
+#         dplyr::select(time, Month, prevalence_among_plants)
+#       
+#       AUC <- audps(test$prevalence_among_plants, test$time)
+#       auc_test <- data.frame(i, j, AUC)
+#       entire_auc_parasite_spp <- rbind(entire_auc_parasite_spp, auc_test)
+#   }
+# }
+# 
+# col_head <- c( "Plot", "parasite", "AUDPS_parasite_spp")
+# colnames(entire_auc_parasite_spp) <- col_head
+# 
+# 
+# plot_change_spp <- merge(final_temp, entire_auc_parasite_spp, by ="Plot")
+# head(plot_change_spp)
 ```
 
 ```{r disease community change}
-plot_change %>% 
- # filter(Treat == "C->R->P")%>%
-  ggplot(aes(y= (total_disease), x = log10(distance)))+
-  geom_point(aes(y= (total_disease), x = log10(distance)), pch=21)+ 
-  labs(x="change in plant community composition (log10 euclidean distance 2017-2019)", 
-       y = "total disease (cross-species AUDPS 2017-2019)")+
- # facet_wrap(~Treat, scales='free')+
-  geom_smooth(method="lm",  se = FALSE, colour='black')+
-  theme_bw()
-
-#dis.comp.model <- lm (log10(total_disease)~log10(distance)*Treat, data= plot_change)
-#summary(dis.comp.model)
-
-plot_change_spp %>% 
-  #filter(Treat == "C->R->P")%>%
-  ggplot(aes(y= log10(AUDPS_parasite_spp), x = log10(distance)))+
-  geom_point(aes(y= log10(AUDPS_parasite_spp), x = log10(distance)), pch=21)+ 
-  labs(x="change in plant community composition (log10 euclidean distance 2017-2019)", 
-       y = "total disease (species AUDPS 2017-2019)")+
-  facet_wrap(~parasite*Treat, scales='free')+
-  geom_smooth(method="lm",  se = FALSE, colour='black')+
-  theme_bw()
+# plot_change %>% 
+#  # filter(Treat == "C->R->P")%>%
+#   ggplot(aes(y= (total_disease), x = log10(distance)))+
+#   geom_point(aes(y= (total_disease), x = log10(distance)), pch=21)+ 
+#   labs(x="change in plant community composition (log10 euclidean distance 2017-2019)", 
+#        y = "total disease (cross-species AUDPS 2017-2019)")+
+#  # facet_wrap(~Treat, scales='free')+
+#   geom_smooth(method="lm",  se = FALSE, colour='black')+
+#   theme_bw()
+# 
+# #dis.comp.model <- lm (log10(total_disease)~log10(distance)*Treat, data= plot_change)
+# #summary(dis.comp.model)
+# 
+# plot_change_spp %>% 
+#   #filter(Treat == "C->R->P")%>%
+#   ggplot(aes(y= log10(AUDPS_parasite_spp), x = log10(distance)))+
+#   geom_point(aes(y= log10(AUDPS_parasite_spp), x = log10(distance)), pch=21)+ 
+#   labs(x="change in plant community composition (log10 euclidean distance 2017-2019)", 
+#        y = "total disease (species AUDPS 2017-2019)")+
+#   facet_wrap(~parasite*Treat, scales='free')+
+#   geom_smooth(method="lm",  se = FALSE, colour='black')+
+#   theme_bw()
 
 ```
 
@@ -2727,52 +3055,52 @@ plot_change_spp %>%
 Are species composition changes between years driven by species turnover or nestedness 
 
 ```{r beta diversity}
-set.seed(1234567) #make sure to set seed to get the same result, this is a permutation based method 
-# create community matrix for each year 
-plant17 <- plant_SSE %>% filter(Year == '2017') %>% dplyr::select(8:105)
-plant18 <- plant_SSE %>% filter(Year == '2018')  %>% dplyr::select(8:105)
-plant19 <- plant_SSE %>% filter(Year == '2019') %>% dplyr::select(8:105)
-
-#convert to pa data 
-plant17pa<-apply(plant17,2, function(x) {ifelse(x==0,0,1)})  #makes presence-absence matrix
-plant18pa<-apply(plant18,2, function(x) {ifelse(x==0,0,1)})  #makes presence-absence matrix
-plant19pa<-apply(plant19,2, function(x) {ifelse(x==0,0,1)})  #makes presence-absence matrix
-
-library(betapart) # beta diversity analysis 
-plant.temp.beta.1718 <- beta.temp(plant17pa, plant18pa, index.family="sor")
-plant.temp.beta.1819 <- beta.temp(plant18pa, plant19pa, index.family="sor")
-
-#jpeg(file="temporal_beta_plant_taxa_SSE.jpeg", width = 180, height = 90, units = 'mm', res = 300)
-par(mar=c(2.8,2.8,0.2,0.2),mgp=c(1.8,.6,0), mfrow=c(1,2))#margins S,W,N,E and mgp=titles,labels,line (default=3,1,0)
-
-boxplot((plant.temp.beta.1718$beta.sor),(plant.temp.beta.1718$beta.sne), (plant.temp.beta.1718$beta.sim),  xaxt = "n", main='', ylab="beta diversity 2017-2018", lwd=1, ylim=c(0,1)) # nestedness
-axis(1, at=1:3, labels=c(expression(beta['SOR']), expression(beta['SNE']), expression(beta['SIM']))) 
-mtext("A", side=3, line=-1.5, adj=0.05, cex=1.2)
-
-boxplot((plant.temp.beta.1819$beta.sor),(plant.temp.beta.1819$beta.sne), (plant.temp.beta.1819$beta.sim),  xaxt = "n", main='', ylab="beta diversity 2018-2019", lwd=1, ylim=c(0,1)) # nestedness
-axis(1, at=1:3, labels=c(expression(beta['SOR']), expression(beta['SNE']), expression(beta['SIM']))) 
-mtext("B", side=3, line=-1.5, adj=0.05, cex=1.2)
-
-#dev.off()
-
-##### within year 
-
-# p17.beta = betapart.core(plant17pa)
-# # distribution of values from resampled data below.. 
-# p17.resamp = beta.sample(plant17pa, sites=32, samples=100, index.family="sor")
+# set.seed(1234567) #make sure to set seed to get the same result, this is a permutation based method 
+# # create community matrix for each year 
+# plant17 <- plant_SSE %>% filter(Year == '2017') %>% dplyr::select(8:105)
+# plant18 <- plant_SSE %>% filter(Year == '2018')  %>% dplyr::select(8:105)
+# plant19 <- plant_SSE %>% filter(Year == '2019') %>% dplyr::select(8:105)
 # 
-# p18.beta = betapart.core(plant18pa)
-# # distribution of values from resampled data below.. 
-# p18.resamp = beta.sample(plant18pa, sites=32, samples=100, index.family="sor")
+# #convert to pa data 
+# plant17pa<-apply(plant17,2, function(x) {ifelse(x==0,0,1)})  #makes presence-absence matrix
+# plant18pa<-apply(plant18,2, function(x) {ifelse(x==0,0,1)})  #makes presence-absence matrix
+# plant19pa<-apply(plant19,2, function(x) {ifelse(x==0,0,1)})  #makes presence-absence matrix
 # 
-# p19.beta = betapart.core(plant19pa)
-# # distribution of values from resampled data below.. 
-# p19.resamp = beta.sample(plant19pa, sites=32, samples=100, index.family="sor")
+# library(betapart) # beta diversity analysis 
+# plant.temp.beta.1718 <- beta.temp(plant17pa, plant18pa, index.family="sor")
+# plant.temp.beta.1819 <- beta.temp(plant18pa, plant19pa, index.family="sor")
 # 
-# #jpeg(file="beta_each_yr_plant_taxa_SSE.jpeg", width = 180, height = 90, units = 'mm', res = 300)
-# par(mar=c(2.8,2.8,0.2,0.2),mgp=c(1.8,.6,0), mfrow=c(1,3))#margins S,W,N,E and mgp=titles,labels,line (default=3,1,0)
+# #jpeg(file="temporal_beta_plant_taxa_SSE.jpeg", width = 180, height = 90, units = 'mm', res = 300)
+# par(mar=c(2.8,2.8,0.2,0.2),mgp=c(1.8,.6,0), mfrow=c(1,2))#margins S,W,N,E and mgp=titles,labels,line (default=3,1,0)
 # 
-# boxplot((p17.resamp$sampled.values$beta.SOR),(p17.resamp$sampled.values$beta.SNE), (p17.resamp$sampled.values$beta.SIM),  xaxt = "n", main='', ylab="beta diversity 2017", lwd=1, ylim=c(0,1)) # nestedness
+# boxplot((plant.temp.beta.1718$beta.sor),(plant.temp.beta.1718$beta.sne), (plant.temp.beta.1718$beta.sim),  xaxt = "n", main='', ylab="beta diversity 2017-2018", lwd=1, ylim=c(0,1)) # nestedness
+# axis(1, at=1:3, labels=c(expression(beta['SOR']), expression(beta['SNE']), expression(beta['SIM']))) 
+# mtext("A", side=3, line=-1.5, adj=0.05, cex=1.2)
+# 
+# boxplot((plant.temp.beta.1819$beta.sor),(plant.temp.beta.1819$beta.sne), (plant.temp.beta.1819$beta.sim),  xaxt = "n", main='', ylab="beta diversity 2018-2019", lwd=1, ylim=c(0,1)) # nestedness
+# axis(1, at=1:3, labels=c(expression(beta['SOR']), expression(beta['SNE']), expression(beta['SIM']))) 
+# mtext("B", side=3, line=-1.5, adj=0.05, cex=1.2)
+# 
+# #dev.off()
+# 
+# ##### within year 
+# 
+# # p17.beta = betapart.core(plant17pa)
+# # # distribution of values from resampled data below.. 
+# # p17.resamp = beta.sample(plant17pa, sites=32, samples=100, index.family="sor")
+# # 
+# # p18.beta = betapart.core(plant18pa)
+# # # distribution of values from resampled data below.. 
+# # p18.resamp = beta.sample(plant18pa, sites=32, samples=100, index.family="sor")
+# # 
+# # p19.beta = betapart.core(plant19pa)
+# # # distribution of values from resampled data below.. 
+# # p19.resamp = beta.sample(plant19pa, sites=32, samples=100, index.family="sor")
+# # 
+# # #jpeg(file="beta_each_yr_plant_taxa_SSE.jpeg", width = 180, height = 90, units = 'mm', res = 300)
+# # par(mar=c(2.8,2.8,0.2,0.2),mgp=c(1.8,.6,0), mfrow=c(1,3))#margins S,W,N,E and mgp=titles,labels,line (default=3,1,0)
+# # 
+# # boxplot((p17.resamp$sampled.values$beta.SOR),(p17.resamp$sampled.values$beta.SNE), (p17.resamp$sampled.values$beta.SIM),  xaxt = "n", main='', ylab="beta diversity 2017", lwd=1, ylim=c(0,1)) # nestedness
 # axis(1, at=1:3, labels=c(expression(beta['SOR']), expression(beta['SNE']), expression(beta['SIM']))) 
 # mtext("A", side=3, line=-1.5, adj=0.05, cex=1.2)
 # 
