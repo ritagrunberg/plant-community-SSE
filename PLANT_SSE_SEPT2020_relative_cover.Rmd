@@ -78,8 +78,8 @@ Get the 95% quantile for plant max height from data collection by Brooklynn and 
 ```{r quantile height widner}
 plant95quant_widener <- plant_height_Widener2020 %>%
   group_by(Species) %>%
-  summarise(Max_height_cm =quantile(Max_height_cm, c( .95))) %>% #get 95% quantile for max height 
-  filter(Max_height_cm > 30) # remove Poa from dataset, not comfortable with ID 
+  summarise(Max_height_cm =quantile(Max_height_cm, c( .95))) #%>% #get 95% quantile for max height 
+ # filter(Max_height_cm > 30) # remove Poa from dataset, not comfortable with ID 
 
 head(plant95quant_widener)
 ```
@@ -441,28 +441,28 @@ cwm_height <- plant_tidy %>%
   mutate(Year = as.factor(Year))
 
 
-cwm1<- cwm_height %>%
-  ggplot()+
-  geom_boxplot(aes(x=Year, y=log10(Height_cwm), fill=Treat))+
-  scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
-                    guide=guide_legend(override.aes=list(shape=21)), 
-                    labels = c("Never", "Always", "CR->P", "CRP"))+
-  labs(x="",y="max height cwm")+
-  ggtitle("CWM with Poa (estimate 30 cm)")+
-  rita_theme+
-  guides(fill=guide_legend("Treatment",  keywidth=0.12,
-                           keyheight=0.12, override.aes = list(shape=21),
-                           default.unit="inch"), color= FALSE)+
-  theme(legend.title = element_text(size=7, face="bold"),
-        legend.text = element_text(size=6.5))+ 
-  theme(legend.position=c(0.10,0.85))
+# cwm1<- cwm_height %>%
+#   ggplot()+
+#   geom_boxplot(aes(x=Year, y=log10(Height_cwm), fill=Treat))+
+#   scale_fill_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21)), 
+#                     labels = c("Never", "Always", "CR->P", "CRP"))+
+#   labs(x="",y="max height cwm")+
+#   ggtitle("CWM with Poa (estimate 30 cm)")+
+#   rita_theme+
+#   guides(fill=guide_legend("Treatment",  keywidth=0.12,
+#                            keyheight=0.12, override.aes = list(shape=21),
+#                            default.unit="inch"), color= FALSE)+
+#   theme(legend.title = element_text(size=7, face="bold"),
+#         legend.text = element_text(size=6.5))+ 
+#   theme(legend.position=c(0.10,0.85))
+# 
+# cwm_anova <- aov(log10(Height_cwm) ~ Year * Treat + Error(Plot/(Year)), cwm_height)
+# summary(cwm_anova)
 
-cwm_anova <- aov(log10(Height_cwm) ~ Year * Treat + Error(Plot/(Year)), cwm_height)
-summary(cwm_anova)
 
-
-  hist1 <-ggplot(cwm_height, aes(total_cover))+geom_histogram()+theme_bw()+
-    labs(x="total cover included in CWM w/ Poa")
+  # hist1 <-ggplot(cwm_height, aes(total_cover))+geom_histogram()+theme_bw()+
+  #   labs(x="total cover included in CWM w/ Poa")
 
   
   cwm_height2 <- plant_tidy %>% 
@@ -481,7 +481,7 @@ summary(cwm_anova)
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP"))+
   labs(x="",y="max height cwm")+
-  ggtitle("CWM without Poa")+
+  ggtitle("CWM w/ Poa")+
   rita_theme+
   guides(fill=guide_legend("Treatment",  keywidth=0.12,
                            keyheight=0.12, override.aes = list(shape=21),
@@ -496,7 +496,7 @@ summary(cwm_anova)
   hist2 <-ggplot(cwm_height2, aes(total_cover))+geom_histogram()+theme_bw()+
     labs(x="total cover included in CWM w/o Poa")
 
- ggarrange(cwm1, cwm2 #,
+ ggarrange(cwm1, hist2#,
           # hist1, hist2
            )
 
