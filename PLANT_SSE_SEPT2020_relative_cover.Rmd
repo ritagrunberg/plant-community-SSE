@@ -333,12 +333,12 @@ plant_tidy <- plant_community_disease %>%
 
 plant_spp_syn <- plant_tidy %>%
   group_by(Plot, Treat, Species) %>%
-  mutate(sd_spp = sd(cover),
-         mean_spp = mean(cover),
-         cv_spp = sd_spp/mean_spp)%>%
+  mutate(sd_spp = sd(cover), #stdev of a species across time within a plot 
+         mean_spp = mean(cover), #mean of that species across time within a plot 
+         cv_spp = sd_spp/mean_spp)%>% #coeff of variaiton of that species 
   ungroup()%>%
   group_by(Plot, Treat) %>%
-  summarise(sd_all = sd(cover),
+  summarise(sd_all = sd(cover), 
          total_sd = sum(sd_spp),
          community_sync = sd_all/total_sd,
          mean_rich = mean(sp_rich))
@@ -362,10 +362,19 @@ plant_spp_syn %>%
   guides(fill=FALSE)+
   rita_theme
 
-#plant_spp_syn %>%
- # ggplot()+
-#  geom_point(aes(x=cv_spp, y = Species))+facet_wrap(~Treat)+theme_bw()
+plant_species_syn <- plant_tidy %>%
+  group_by(Plot, Treat, Species) %>%
+  summarise(sd_spp = sd(cover), #stdev of a species across time within a plot 
+         mean_spp = mean(cover), #mean of that species across time within a plot 
+         cv_spp = sd_spp/mean_spp)%>% #coeff of variaiton of that species 
+  ungroup()%>% drop_na()%>%
+  group_by(Plot, Treat) %>%
+  mutate(community_stability = mean(cv_spp))
 
+plant_species_syn%>%
+  ggplot()+
+  geom_boxplot(aes(x = Treat, y = community_stability))+
+  rita_theme
 ```
 
 ```{r add group data}
@@ -496,7 +505,7 @@ cwm_height <- plant_tidy %>%
   hist2 <-ggplot(cwm_height2, aes(total_cover))+geom_histogram()+theme_bw()+
     labs(x="total cover included in CWM w/o Poa")
 
- ggarrange(cwm1, hist2#,
+ ggarrange(cwm2, hist2#,
           # hist1, hist2
            )
 
@@ -978,15 +987,21 @@ Univariate ANOVAS were used to examine individual dependent variables contributi
 
 First look at cross species AUDPS 
 ```{r disease_anova}
-disease_anova <- aov(AUDPS_parasite ~ Year * Treat + Error(Plot/(Year)), plant_SSE)
+disease_anova <- aov((AUDPS_parasite) ~ Year * Treat + Error(Plot/(Year)), plant_SSE)
+#disease_anova2 <- aov((AUDPS_parasite) ~ Year * Treat, plant_SSE)
 summary(disease_anova)
+#plot(disease_anova2)
 
 cross_disease_emm <- emmeans(disease_anova , ~ Year*Treat)
-pairs(cross_disease_emm)
+#pairs(cross_disease_emm)
 cross_diseaes_out <- data.frame(cross_disease_emm)
+
+library(DescTools)
+EtaSq(disease_anova, type=1, anova=TRUE)
+
 ```
 
-Visualization of relationship
+Visualization of disease and treatment relationship
 
 ```{r disease graphic, echo=FALSE}
 
@@ -2966,8 +2981,8 @@ dodge <- position_dodge(width = 0.5)
 
 temp_tidy %>% ggplot(aes(x= Treat, y = distance, fill=Treat))+
  # geom_point(aes(x=Time, y = log10(distance),  fill=Treat), pch=21, position = dodge)+ 
-  geom_boxplot(aes(x=Treat, y = log10(distance), colour=Treat), width=0.5, position = dodge, outlier.colour = NULL)+ 
-  geom_boxplot(aes(x=Treat, y = log10(distance), fill=Treat), width=0.5, position = dodge, outlier.size=-1)+ 
+ # geom_boxplot(aes(x=Time, y = log10(distance), colour=Treat), width=0.5, position = dodge, outlier.colour = NULL)+ 
+  geom_boxplot(aes(x=Time, y = log10(distance), fill=Treat), width=0.5, position = dodge, outlier.size=-1)+ 
   theme_bw() +
   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
@@ -2976,8 +2991,8 @@ temp_tidy %>% ggplot(aes(x= Treat, y = distance, fill=Treat))+
                     guide=guide_legend(override.aes=list(shape=21)), 
                     labels = c("Never", "Always", "CR->P", "CRP")) +
   guides(colour=FALSE, fill=FALSE)+
-  facet_wrap(~Time)+
-  labs(x="", y="Temporal community dissimilarity (2017-2019)")
+ # facet_wrap(~Time)+
+  labs(x="", y="Temporal community dissimilarity")
 
 
 ```
@@ -2999,7 +3014,14 @@ final_temp2 <- temporal_dissimilarity %>%
 tempdist.mod2 <- aov(log10(distance) ~ Treat + Time + Error(Plot/Time), data= final_temp2)
 summary(tempdist.mod2)
 
+temp.year.eta <-(summary(tempdist.mod2)[["Error: Plot:Time"]][[1]]["Time" , "F value"]*summary(tempdist.mod2)[["Error: Plot:Time"]][[1]]["Time" , "Df"])/(summary(tempdist.mod2)[["Error: Plot:Time"]][[1]]["Time" , "F value"]*summary(tempdist.mod2)[["Error: Plot:Time"]][[1]]["Time" , "Df"]+summary(tempdist.mod2)[["Error: Plot:Time"]][[1]]["Residuals" , "Df"])
+temp.year.eta
+
+posttemp <- emmeans(tempdist.mod2, ~ Time)
+pairs(posttemp)
 ```
+
+
 ```{r temp comm and parasite}
 change_disease <- plant_SSE %>% 
   group_by(Plot)%>%
@@ -3089,117 +3111,117 @@ disease_c_tidy <- disease_community_change %>%
 ```
 
 ```{r graphics for disease change}
-disease_c_tidy%>%
-  ggplot()+
-  geom_hline(yintercept = 0, lty=2, lwd=1)+
-  geom_point(aes(x=log10(distance), y = epidemic, fill=parasite), pch=21, size=3)+ 
-  geom_smooth(aes(x=log10(distance), y = (epidemic), group=parasite, color=parasite), size =1.5,  se = FALSE, method='lm') +
-  facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
-             )+
-  labs(x='change in host community composition (euclidean distance moved by a community)', 
-       y ='change in parasite epidemic (diff. in annual AUDPS)')+
-  theme_bw()
-
-disease_c_tidy%>%
-  ggplot()+
-  geom_hline(yintercept = 0, lty=2, lwd=1)+
-  geom_point(aes(x=log10(distance), y = epidemic, fill=Treat, shape=Time), size=3)+ 
-  geom_smooth(aes(x=log10(distance), y = (epidemic), group=Treat, color=Treat), size =1.5,  se = FALSE, method='lm') +
-  facet_wrap(~parasite*Time,ncol=3, nrow=2 , scales='free'
-             )+
-  scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'))+
-  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
-                    guide=guide_legend(override.aes=list(shape=21))) + 
-  scale_shape_manual(values=c(21,25)) + 
-  labs(x='change in host community composition (euclidean distance moved by a community)', 
-       y ='change in parasite epidemic (diff. in annual AUDPS)')+
-  theme_bw()
-
-disease_c_tidy%>%
-  filter(Treat == 'C->R->P')%>%
-  ggplot()+
-  geom_hline(yintercept = 0, lty=2, lwd=1)+
-  geom_point(aes(x=log10(distance), y = epidemic, fill=Time, shape=Time), size=3)+ 
-  geom_smooth(aes(x=log10(distance), y = (epidemic), group=Time, color=Time), size =1.5,  se = FALSE, method='lm') +
-  facet_wrap(~parasite,ncol=3, nrow=1 , scales='free'
-  )+
-  scale_color_manual(values=c('blue', 'grey'))+
-  scale_fill_manual(values=c('blue', 'grey'),
-                    guide=guide_legend(override.aes=list(shape=21))) + 
-  scale_shape_manual(values=c(21,25)) + 
-  labs(x='change in host community composition (euclidean distance moved by a community)', 
-       y ='change in parasite epidemic (diff. in annual AUDPS)')+
-  theme_bw()
-
 # disease_c_tidy%>%
 #   ggplot()+
 #   geom_hline(yintercept = 0, lty=2, lwd=1)+
-#   geom_point(aes(x=log10(distance), y = pathogen), pch=21, size=3)+ 
-#   geom_smooth(aes(x=log10(distance), y = pathogen), size =1.5,  se = FALSE, method='lm') +
+#   geom_point(aes(x=log10(distance), y = epidemic, fill=parasite), pch=21, size=3)+ 
+#   geom_smooth(aes(x=log10(distance), y = (epidemic), group=parasite, color=parasite), size =1.5,  se = FALSE, method='lm') +
 #   facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
 #              )+
-#   labs(x='compositional host community change (euclidean distance moved by a community)', 
+#   labs(x='change in host community composition (euclidean distance moved by a community)', 
+#        y ='change in parasite epidemic (diff. in annual AUDPS)')+
+#   theme_bw()
+# 
+# disease_c_tidy%>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1)+
+#   geom_point(aes(x=log10(distance), y = epidemic, fill=Treat, shape=Time), size=3)+ 
+#   geom_smooth(aes(x=log10(distance), y = (epidemic), group=Treat, color=Treat), size =1.5,  se = FALSE, method='lm') +
+#   facet_wrap(~parasite*Time,ncol=3, nrow=2 , scales='free'
+#              )+
+#   scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'))+
+#   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21))) + 
+#   scale_shape_manual(values=c(21,25)) + 
+#   labs(x='change in host community composition (euclidean distance moved by a community)', 
+#        y ='change in parasite epidemic (diff. in annual AUDPS)')+
+#   theme_bw()
+# 
+# disease_c_tidy%>%
+#   filter(Treat == 'C->R->P')%>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1)+
+#   geom_point(aes(x=log10(distance), y = epidemic, fill=Time, shape=Time), size=3)+ 
+#   geom_smooth(aes(x=log10(distance), y = (epidemic), group=Time, color=Time), size =1.5,  se = FALSE, method='lm') +
+#   facet_wrap(~parasite,ncol=3, nrow=1 , scales='free'
+#   )+
+#   scale_color_manual(values=c('blue', 'grey'))+
+#   scale_fill_manual(values=c('blue', 'grey'),
+#                     guide=guide_legend(override.aes=list(shape=21))) + 
+#   scale_shape_manual(values=c(21,25)) + 
+#   labs(x='change in host community composition (euclidean distance moved by a community)', 
+#        y ='change in parasite epidemic (diff. in annual AUDPS)')+
+#   theme_bw()
+# 
+# # disease_c_tidy%>%
+# #   ggplot()+
+# #   geom_hline(yintercept = 0, lty=2, lwd=1)+
+# #   geom_point(aes(x=log10(distance), y = pathogen), pch=21, size=3)+ 
+# #   geom_smooth(aes(x=log10(distance), y = pathogen), size =1.5,  se = FALSE, method='lm') +
+# #   facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+# #              )+
+# #   labs(x='compositional host community change (euclidean distance moved by a community)', 
+# #        y ='change in parasite epidemic (diff. in annual AUDPS)')+
+# #   theme_bw()
+# 
+# disease_c_tidy%>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1.25, col='red')+
+#   geom_vline(xintercept = 0, lty=2, lwd=1.25, col='blue')+
+#   geom_point(aes(x=fescue, y = epidemic, fill=parasite), pch=21, size=3)+ 
+#   geom_smooth(aes(x=fescue, y = (epidemic), group=parasite, color=parasite), size =1.5,  se = FALSE, method='lm') +
+#   facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+#   )+
+#   labs(x='change in fescue cover', 
+#        y ='change in parasite epidemic (diff. in annual AUDPS)')+
+#   theme_bw()
+# 
+# disease_c_tidy%>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1)+
+#   geom_vline(xintercept = 0, lty=2, lwd=1)+
+#   geom_point(aes(x=fescue, y = epidemic, fill=Treat, shape=Time), size=3)+ 
+#   geom_smooth(aes(x=fescue, y = (epidemic), group=Treat, color=Treat), size =1.5,  se = FALSE, method='lm') +
+#   facet_wrap(~parasite*Time,ncol=2, nrow=3 , scales='free'
+#   )+
+#   scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'))+
+#   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21))) + 
+#   scale_shape_manual(values=c(21,25)) + 
+#   labs(x='change in fescue cover', 
 #        y ='change in parasite epidemic (diff. in annual AUDPS)')+
 #   theme_bw()
 
-disease_c_tidy%>%
-  ggplot()+
-  geom_hline(yintercept = 0, lty=2, lwd=1.25, col='red')+
-  geom_vline(xintercept = 0, lty=2, lwd=1.25, col='blue')+
-  geom_point(aes(x=fescue, y = epidemic, fill=parasite), pch=21, size=3)+ 
-  geom_smooth(aes(x=fescue, y = (epidemic), group=parasite, color=parasite), size =1.5,  se = FALSE, method='lm') +
-  facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
-  )+
-  labs(x='change in fescue cover', 
-       y ='change in parasite epidemic (diff. in annual AUDPS)')+
-  theme_bw()
-
-disease_c_tidy%>%
-  ggplot()+
-  geom_hline(yintercept = 0, lty=2, lwd=1)+
-  geom_vline(xintercept = 0, lty=2, lwd=1)+
-  geom_point(aes(x=fescue, y = epidemic, fill=Treat, shape=Time), size=3)+ 
-  geom_smooth(aes(x=fescue, y = (epidemic), group=Treat, color=Treat), size =1.5,  se = FALSE, method='lm') +
-  facet_wrap(~parasite*Time,ncol=2, nrow=3 , scales='free'
-  )+
-  scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'))+
-  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
-                    guide=guide_legend(override.aes=list(shape=21))) + 
-  scale_shape_manual(values=c(21,25)) + 
-  labs(x='change in fescue cover', 
-       y ='change in parasite epidemic (diff. in annual AUDPS)')+
-  theme_bw()
-
-
-disease_c_tidy%>%
-  ggplot()+
-  geom_hline(yintercept = 0, lty=2, lwd=1.25, col='red')+
-  geom_vline(xintercept = 0, lty=2, lwd=1.25, col='blue')+
-  geom_point(aes(x=sp_rich, y = epidemic, fill=parasite), pch=21, size=3)+ 
-  geom_smooth(aes(x=sp_rich, y = (epidemic), group=parasite, color=parasite), size =1.5,  se = FALSE, method='lm') +
-  facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
-  )+
-  labs(x='change plant richness', 
-       y ='change in parasite epidemic (diff. in annual AUDPS)')+
-  theme_bw()
-
-#jpeg(file="richnes_epidemic_change.jpeg", width = 180, height = 270, units = 'mm', res = 300)
-disease_c_tidy%>%
-  ggplot()+
-  geom_hline(yintercept = 0, lty=2, lwd=1)+
-  geom_vline(xintercept = 0, lty=2, lwd=1)+
-  geom_point(aes(x=sp_rich, y = epidemic, fill=Treat, shape=Time), size=3)+ 
-  geom_smooth(aes(x=sp_rich, y = (epidemic), group=Treat, color=Treat), size =1.5,  se = FALSE, method='lm') +
-  facet_wrap(~parasite*Time,ncol=2, nrow=3 , scales='free'
-  )+
-  scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'))+
-  scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
-                    guide=guide_legend(override.aes=list(shape=21))) + 
-  scale_shape_manual(values=c(21,25)) + 
-  labs(x='change in plant richness', 
-       y ='change in parasite epidemic (diff. in annual AUDPS)')+
-  theme_bw()
-#dev.off()
+# 
+# disease_c_tidy%>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1.25, col='red')+
+#   geom_vline(xintercept = 0, lty=2, lwd=1.25, col='blue')+
+#   geom_point(aes(x=sp_rich, y = epidemic, fill=parasite), pch=21, size=3)+ 
+#   geom_smooth(aes(x=sp_rich, y = (epidemic), group=parasite, color=parasite), size =1.5,  se = FALSE, method='lm') +
+#   facet_wrap(~Time*Treat,ncol=4, nrow=2 #, scales='free'
+#   )+
+#   labs(x='change plant richness', 
+#        y ='change in parasite epidemic (diff. in annual AUDPS)')+
+#   theme_bw()
+# 
+# #jpeg(file="richnes_epidemic_change.jpeg", width = 180, height = 270, units = 'mm', res = 300)
+# disease_c_tidy%>%
+#   ggplot()+
+#   geom_hline(yintercept = 0, lty=2, lwd=1)+
+#   geom_vline(xintercept = 0, lty=2, lwd=1)+
+#   geom_point(aes(x=sp_rich, y = epidemic, fill=Treat, shape=Time), size=3)+ 
+#   geom_smooth(aes(x=sp_rich, y = (epidemic), group=Treat, color=Treat), size =1.5,  se = FALSE, method='lm') +
+#   facet_wrap(~parasite*Time,ncol=2, nrow=3 , scales='free'
+#   )+
+#   scale_color_manual(values=c('#fed976','#a1dab4','#41b6c4','#225ea8'))+
+#   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
+#                     guide=guide_legend(override.aes=list(shape=21))) + 
+#   scale_shape_manual(values=c(21,25)) + 
+#   labs(x='change in plant richness', 
+#        y ='change in parasite epidemic (diff. in annual AUDPS)')+
+#   theme_bw()
+# #dev.off()
 
 # disease_c_tidy%>%
 #   ggplot()+
