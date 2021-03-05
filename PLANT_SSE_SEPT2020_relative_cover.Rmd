@@ -135,6 +135,21 @@ max(plant_community_diversity$sp_rich)
 min(plant_community_diversity$sp_rich)
 
 ```
+```{r mvabun}
+# library(mvabund)
+# library(dplyr)
+# plant_list <- plant_community_diversity %>% select(8:105) %>% select_if(colSums(.) != 0)
+# 
+# plant.data <- mvabund(plant_list)
+# is.mvabund(plant.data)
+# 
+# #constrain the permutation within a plant by designating shuffletset; nrow = within the abundance data and control = plant/block 
+# permID <- shuffleSet(n=nrow(plant.data), nset=99, control=how(block=plant_community_diversity$Plot))
+# mod1 <- manyglm(plant.data ~ plant_community_diversity$Treat* plant_community_diversity$Year, family="poisson")
+# plot(mod1)
+# mod.out <- anova(mod1, bootID=permID, p.uni = 'adjusted', test = 'LR')
+# printCoefmat(mod.out$uni.p)
+```
 
 Adding a column that indicates year and log transforming biomass data. Then merge with plant community matrix 
 
