@@ -1,0 +1,43 @@
+"","Species","NMDS1","NMDS2","Genus","spec","Abbrev","Group","Origin","Pathway","AccSpeciesID","Growth","Growth2","Family","Group2","Duration","Max_height_cm","Source_height_data"
+"1","Acalypha sp.",0.121307890159984,-0.20194809550919,"Acalypha","sp","Acaly","Forbs","Native",NA,NA,"Forbs","Forbs","Euphorbiaceae","Dicot","Annual",NA,NA
+"2","Allium vineale",-0.11706897196211,0.019530902406862,"Allium","vineale","Alli","Forbs","Exotic",NA,2590,"Forbs","Forbs","Liliaceae","Monocot","Perennial",NA,NA
+"3","Andropogon virginicus",-0.192579862599832,0.0325034932786476,"Andropogon","virginicus","Andro","Grasses","Native","C4",3639,"C4","C4","Poaceae","Monocot","Perennial",36.3,"Wilfarhat 2020"
+"4","Anthoxanthum odoratum",-0.104877080861803,0.0695397545659829,"Anthoxanthum","odoratum","Antho","Grasses","Exotic","C3",4036,"C3","C3","Poaceae","Monocot","Perennial",49.5,"Wilfarhat 2020"
+"5","Apocynum cannibinum",-0.0250408172994934,-0.634347985836972,"Apocynum","cannibinum","Apocyn","Forbs","Native",NA,4237,"Forbs","Forbs","Apocynaceae","Dicot","Perennial",108.7,"Wilfarhat 2020"
+"6","Celtis laevigata",-0.246422237600992,0.300896117636023,"Celtis","laevigata","Celt","Woody","Native",NA,11491,"Woody","Woody","Ulmaceae","Dicot","Perennial",NA,NA
+"7","Conyza canadensis",0.254992472376646,-0.279347096352474,"Conyza","canadensis","Cony","Forbs","Native",NA,21638,"Forbs","Forbs","Asteraceae","Dicot","Annual",94.9,"Wilfarhat 2020"
+"8","Cynodon dactylon",-0.138750840971339,-0.0975871306672136,"Cynodon","dactylon","Cyno","Grasses","Exotic","C4",NA,"C4","C4","Poaceae","Monocot","Perennial",NA,NA
+"9","Daucus carota",-0.0883946220283593,-0.638185096395001,"Daucus","carota","Dauc","Forbs","Exotic",NA,NA,"Forbs","Forbs","Apiaceae","Dicot","Biennial",39,"Wilfarhat 2020"
+"10","Desmodium sp.",-0.136993743296408,0.0597362258014467,"Desmodium","sp","Desm","Legumes","Native",NA,NA,"Legumes","Legumes","Fabaceae","Dicot","Perennial",NA,NA
+"11","Digitaria sanguinalis",0.210842352368435,-0.272440972884065,"Digitaria","sanguinalis","Digi","Grasses","Exotic","C4",18103,"C4","C4","Poaceae","Monocot","Annual",47.6,"Wilfarhat 2020"
+"12","Eragrostis capillaris",-0.127118038679745,0.0642849582610039,"Eragrostis","capillaris","Erag","Grasses","Native","C4",NA,"C4","C4","Poaceae","Monocot","Annual",37,"Wilfarhat 2020"
+"13","Fraxinus sp.",0.070226984736768,0.248902636119185,"Fraxinus","sp","Frax","Woody","Native",NA,NA,"Woody","Woody","Oleaceae","Dicot","Perennial",NA,NA
+"14","Holcus lanatus",-0.103226726976528,-0.129342516345099,"Holcus","lanatus","Holc","Grasses","Exotic","C3",29305,"C3","C3","Poaceae","Monocot","Perennial",35.3,NA
+"15","Houstonia sp.",-0.004371444032696,-0.158973020865567,"Houstonia","sp","Hous","Forbs","Native",NA,NA,"Forbs","Forbs","Rubiaceae","Dicot","X",NA,NA
+"16","Ipomea sp.",0.242766467666324,-0.186054527156486,"Ipomea","sp","Ipom","Forbs","X",NA,NA,"Forbs","Forbs","X","X","X",NA,NA
+"17","Juncus sp.",0.0642248434356697,-0.926830412208268,"Juncus","sp","Junc","Grasses","X","C3",NA,"C3","C3","Juncaceae","Monocot","X",NA,NA
+"18","Juniperus virginiana",-0.163342027460908,0.0632779032983219,"Juniperus","virginiana","Juni","Woody","Native",NA,31598,"Woody","Woody","Cupressaceae","Gymnosperm","Perennial",NA,NA
+"19","Lespedeza cuneata",0.0291640241691305,0.357590344284754,"Lespedeza","cuneata","Lesp","Legumes","Exotic",NA,33012,"Legumes","Legumes","Fabaceae","Dicot","Perennial",101,"Wilfarhat 2020"
+"20","Lonicera japonica",0.328380783573708,-0.127730924735289,"Lonicera","japonica","Loni","Woody","Exotic",NA,34141,"Woody","Woody","Caprifoliaceae","Dicot","Perennial",48.2,"Wilfarhat 2020"
+"21","Oxalis dillenii",0.078524089577005,-0.0928000415047013,"Oxalis","dillenii","Oxal","Forbs","Native",NA,39581,"Forbs","Forbs","Oxalidaceae","Dicot","Perennial",31.2,"Wilfarhat 2020"
+"22","Parthenocissus quinquefolia",-0.0864996958666982,-0.23623533335632,"Parthenocissus","quinquefolia","Parth","Woody","Native",NA,40428,"Woody","Woody","Vitaceae","Dicot","Perennial",NA,NA
+"23","Paspalum dilatatum",-0.213717048428512,0.136176934312602,"Paspalum","dilatatum","Pasp d","Grasses","Exotic","C4",40457,"C4","C4","Poaceae","Monocot","Perennial",NA,NA
+"24","Paspalum notatum",-0.143851446910715,0.0757886730020775,"Paspalum","notatum","Pasp n","Grasses","Native","C4",40469,"C4","C4","Poaceae","Monocot","Perennial",NA,NA
+"25","Pinus taeda",-0.169425829818887,-0.00798797177724324,"Pinus","taeda","Pinus","Woody","Native",NA,42188,"Woody","Woody","Pinaceae","Gymnosperm","Perennial",NA,NA
+"26","Plantago aristata",0.126025672110806,-0.155645582375137,"Plantago","aristata","Planta a","Forbs","Native",NA,NA,"Forbs","Forbs","Plantaginaceae","Dicot","Perennial",NA,NA
+"27","Plantago lanceolata",-0.100808726541339,-0.0245547320107916,"Plantago","lanceolata","Planta l","Forbs","Exotic",NA,42541,"Forbs","Forbs","Plantaginaceae","Dicot","Perennial",33.5,"Wilfarhat 2020"
+"28","Poa pratensis",-0.0504887589867609,0.0706762275060626,"Poa","pratensis","Poa","Grasses","Exotic","C3",42870,"C3","C3","Poaceae","Monocot","Perennial",30,NA
+"29","Ranunculus sp.",-0.0545867845945974,0.00329021849125168,"Ranunculus","sp","Ranu","Forbs","X",NA,NA,"Forbs","Forbs","Ranunculaceae","Dicot","X",NA,NA
+"30","Rosa multiflora",-0.755198871866678,-1.09389773839263,"Rosa","multiflora","Rosa","Woody","Exotic",NA,46762,"Woody","Woody","Rosaceae","Dicot","Perennial",123.9,"Brooklynn Rita"
+"31","Rubus argutus",0.127328042895114,-1.25648345555887,"Rubus","argutus","Rubus","Woody","Native",NA,46917,"Woody","Woody","Rosaceae","Dicot","Perennial",83.6,"Brooklynn Rita"
+"32","Setaria parviflora",-0.0207848629924152,0.0142899736881268,"Setaria","parviflora","Seta","Grasses","Native","C4",NA,"C4","C4","Poaceae","Monocot","Perennial",38.7,"Wilfarhat 2020"
+"33","Solanum carolinense",-0.0951473319814419,-0.104703559448028,"Solanum","carolinense","Sola","Forbs","Native",NA,50655,"Forbs","Forbs","Solanaceae","Dicot","Perennial",57.5,"Wilfarhat 2020"
+"34","Sorghum halepense",-0.115544624642484,0.00325473504194065,"Sorghum","halepense","Sorg","Grasses","Exotic","C4",51149,"C4","C4","Poaceae","Monocot","Perennial",115.7,"Wilfarhat 2020"
+"35","Steinchisma hians",-0.00665574680287655,0.200709307597611,"Steinchisma","hians","Stein","Grasses","Native","C4",NA,"C4","C4","Poaceae","Monocot","Perennial",NA,NA
+"36","Toxicodendron radicans",-0.0687699895697745,0.192163851232161,"Toxicodendron","radicans","Toxi","Woody","Native",NA,NA,"Woody","Woody","Anacardiaceae","Dicot","Perennial",NA,NA
+"37","Tridens flavus",-0.226659050230581,-0.360237446781872,"Tridens","flavus","Trid","Grasses","Native","C4",54908,"C4","C4","Poaceae","Monocot","Perennial",48,"Wilfarhat 2020"
+"38","Tripsacum dactyloides",3.28347191509011,0.0401783763969494,"Tripsacum","dactyloides","Trip","Grasses","Native","C4",55142,"C4","C4","Poaceae","Monocot","Perennial",90.8,"Brooklynn Rita"
+"39","UNK Aster 1",-0.0655362145515433,0.0874004826984085,"UNK","Aster","Aster","Woody","X",NA,NA,"Woody","Woody","X","X","X",NA,NA
+"40","Verbesina occidentalis",0.132263985312283,0.20734912928754,"Verbesina","occidentalis","Verb","Forbs","Native",NA,100815,"Forbs","Forbs","Asteraceae","Dicot","Perennial",154.9,"Brooklynn Rita"
+"41","Vetch",-0.160238886938298,0.0254766435321694,"Vetch",NA,"Vetch","Legumes","X",NA,NA,"Forbs","Forbs","Cuscutaceae","Dicot","Perennial",NA,NA
+"42","Vitis sp.",0.00365729303583497,0.0965061899984626,"Vitis","sp","Vitis","Woody","X",NA,NA,"Woody","Woody","Vitaceae","Dicot","X",NA,NA
