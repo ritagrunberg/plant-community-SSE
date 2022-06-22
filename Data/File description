@@ -1,15 +1,75 @@
-Files and metadata:
+Files and metadata for column headers:
 
-1. 2017PlotBiomass_SSprayExp: plot level plant biomass data from SSE plot 
-2. 2018PlotBiomass_SSprayExp: plot level plant biomass data from SSE plot 
-3. 2019PlotBiomass_SSprayExp: plot level plant biomass data from SSE plot 
-4. 2019PlotBiomass_SSprayExp: plot level plant biomass data from SSE plot 
-5. climate_data_durham: climate data taken from USGS 
-6. NMDS_centroids_plant_community_SSE: Bray-Curtis plant community centroids
-7. NMDS_centroids_plant_community_SSE_PA_3D: Jaccard plant community centroids
-8. NMDS_plant_community_SSE: Bray-Curtis plant community NMDS coordinates for all plots 
-9. NMDS_plant_community_SSE_PA_3D: Jaccard plant community NMDS coordinates for all plots 
-10. plant_community_fixed_2Dec2019: plant cover matrix, fixed in December after comments from RH and fixing errors
-11. plant_groups: file containing information on plant species functional group, exotic/native, photosynthetic pathway 
-12. SSE_prevalence_overall: cross-species prevalence within a plot over time 
-13. SSE_prevalence_spp: prevalence of Anthracnose, Rust, and Rhiz within a plot over time 
+1. 2017PlotBiomass_SSprayExp: plot level plant biomass data from SSE plot
+
+Plot: id of plot 1-64
+Year: sample Year
+Bag 1: weighed biomass for first bag of plant biomass
+Bag 2: weighed biomass for second bag of plant biomass
+Bag 3: weighed biomass for third bag of plant biomass
+Date.harvested: day plant biomass was harvested, 11/28/2017
+total.ovendried.weight.(kg): summation of bag 1-3 biomass in kilograms
+harvested.area: area of plot harvested for biomass (this varied between years)
+total.overndried.weight (g/m2): biomass per unit area grams per meter^2
+
+2. 2018PlotBiomass_SSprayExp: plot level plant biomass data from SSE plot
+
+Plot: id of plot 1-64
+Year: sample Year
+Biomass.category: plant biomass was sorted into listed categories
+Strip1.biomass: weighed biomass for first strip of plant biomass
+Strip2.biomass: weighed biomass for second strip of plant biomass
+Strips.area(m^2): area of each Strip
+Plot.biomass(g/m^2): estimated plant biomass per unit area
+Date: day plant biomass was harvested, 11/16/2018
+
+3. 2019PlotBiomass_SSprayExp: plot level plant biomass data from SSE plot
+
+Plot: id of plot 1-64
+Biomass-category: Everything lumped together this year
+Strip1.biomass: weighed biomass for first strip of plant biomass
+Strip2.biomass: weighed biomass for second strip of plant biomass
+Total.ovendried.weight(Kg): strip 1 and 2 biomass summed
+harvested.area(m^2): area of plot harvested
+Plot.biomass(g/m^2): estimated plant biomass per unit area
+Date.harvested:11/25/2019
+
+6. plant_community_fixed_2Dec2019: plant cover matrix, fixed in December after comments from RH and fixing errors
+
+Plot: id of plot 1-64
+Year: sample Year, 2017, 2018, or 2019
+Columns 3 till the end are the absolute cover of each plant species in a plot
+
+7. plant_groups: file containing information on plant species functional group, exotic/native, photosynthetic pathway
+
+Note: not used in analyses
+Species: plant Species
+Abbrev: used in NMDS plots to fit species names
+Group: forb, woody, grasses, legumes
+Origin: native of invasive to NC
+Pathway: C3 or C4 plant
+Growth: same info as group
+Family: plant family name
+Group2: mono or dicot
+Duration: lifespan annual or perennial
+Max_height_cm: maximum height reported from field site
+Source fo max height data: either taken from Wilfart or measured by BNJoyner and RLGRunberg
+
+8. SSE_prevalence_overall: cross-species prevalence within a plot over time
+
+Year: sample year of disease survey
+Month: sample Month of disease survey
+Treatment: fungicide treatment Group
+Plot: id of plot 1-64
+prevalence_within_plot: proportion of tall fescue leaves infected within a plot by any disease
+total_leaves: total leaves surveyed
+total_infected: total infected leaves surveyed
+
+9. SSE_prevalence_spp: prevalence of Anthracnose, Rust, and Rhiz within a plot over time
+
+Year: sample year of disease survey
+Month: sample Month of disease survey
+Treatment: fungicide treatment Group
+Plot: id of plot 1-64
+parasite: causal parasite species of each disease
+prevalence_among_plants: proportion of tall fescue leaves infected with each parasite species in plot
