@@ -2,13 +2,14 @@
 title: "Plant commmunity SSE draft analyses July 2020"
 author: "Rita Grunbreg"
 date: "6/2/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup,  results='hide', message=FALSE, warning=FALSE}
 rm(list = ls())  # clear Rs brain 
 # load packages 
-library(readr)   # read csv file
 library(tidyr)   # tidying data
 library(dplyr)   # manipulating df
 library(ggplot2) # graphing
@@ -20,23 +21,19 @@ library(emmeans)
 library(lmerTest)
 library(afex)
 
-plant_groups <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cover_analysis/data/plant_groups.csv")
-plant_community <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cover_analysis/data/plant_community_fixed_2Dec2019.csv")
-plot_treatment <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plot_treatment.csv")
-plotbiomass_2017 <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cover_analysis/data/2017PlotBiomass_SSprayExp.csv")
-plotbiomass_2018 <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cover_analysis/data/2018PlotBiomass_SSprayExp.csv")
-plotbiomass_2019 <- read_csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plant_cover_analysis/data/2019PlotBiomass_SSprayExp.csv")
-SSE_prevalence_overall <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/SSE_prevalence_overall.csv") #overall prevalence 
-SSE_prevalence_spp <- read_csv("C:/Users/grunberg/Documents/Mitchell lab/plant_community_analysis/raw_files/SSE_prevalence_spp.csv")
+plant_groups <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/plant_groups.csv")
+plant_community <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/plant_community_fixed_2Dec2019.csv",fileEncoding = 'UTF-8-BOM')
+plot_treatment <- read.csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plot_treatment.csv")
+plotbiomass_2017 <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/2017PlotBiomass_SSprayExp.csv", fileEncoding = 'UTF-8-BOM')
+plotbiomass_2018 <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/2018PlotBiomass_SSprayExp.csv",  fileEncoding = 'UTF-8-BOM')
+plotbiomass_2019 <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/2019PlotBiomass_SSprayExp.csv", fileEncoding = 'UTF-8-BOM')
+SSE_prevalence_overall <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/SSE_prevalence_overall.csv", fileEncoding = 'UTF-8-BOM') #overall prevalence 
+SSE_prevalence_spp <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/SSE_prevalence_spp.csv")
 #prevalence for each parasite spp. 
 ```
 
 Description of data files
 
-1. cent [NMDS_centroids_plant_community_SSE.csv] centroids from B-C ordination of plants communities
-2. cent_pa [NMDS_centroids_plant_community_SSE_PA_3D.csv] centroids from JAC ordination of plants communities
-3. plant_all [NMDS_plant_community_SSE.csv] nmds coordinates based on B-C distances between plants communities 
-4. plant_all_pa [NMDS_plant_community_SSE_PA_3D..csv] nmds coordinates based on JAC distances between plants communities 
 5. plant_groups [plant_groups.csv] data on plant species: origin, group, family, etc
 6. plant_community [plant_community_fixed_2Dec2019.csv] plant community matrix from 2017, 2018, 2019; files has been modified based on Rob's feedback 
 7. plotbiomass_2017 [2017PlotBiomass_SSprayExp.csv] plot biomass from SSE 
@@ -59,6 +56,12 @@ rita_theme <-  theme_classic(base_size = 15)+
   )
 ```
 
+Formatting below:
+
+Lumping paspalum since not sure how we can discriminate between those species in the field
+Calculate total cover and then relative cover
+Calculate diversity metrics
+
 ```{r formatting community data}
 #add row and column  = post hoc spatial blocks 
 plot_treatment$row <- rep(1:16, times=1, each=4) # rep 16 rows, one time for 4 treatments
@@ -66,16 +69,18 @@ plot_treatment$column <- rep(seq(1:4), times=16) # rep 1:4, adding column effect
 plot_treatment$Plot <- as.factor(plot_treatment$Plot)
 plot_treatment$Treat <- as.factor(plot_treatment$Treat)
 
+
 #lump paspalum spp.; rob not sure how he could discriminate between these two sp., so I am lumping them together 
-paspalum <- plant_community %>% select(c(Plot, Year, "Paspalum dilatatum", "Paspalum notatum")) %>% drop_na()
-paspalum$Paspalum_sp <- rowSums(paspalum[,3:4])
-paspalum <- paspalum %>% select(Plot, Year, Paspalum_sp) 
+paspalum <- plant_community %>% 
+  dplyr::select(c(Plot, Year, "Paspalum.dilatatum", "Paspalum.notatum")) %>% drop_na()
+paspalum$Paspalum <- rowSums(paspalum[,3:4])
+paspalum <- paspalum %>% dplyr::select(Plot, Year, Paspalum) 
 plant_community <- merge(plant_community, paspalum, by =c("Plot", "Year")) # add paspalum sp.
 plant_community <-  subset(plant_community, select = -c(57,59)) # remove paspalum dilatatum and notatum
 
 #merge DFs
 plant_community_duex <- merge(plot_treatment, plant_community, by=c('Plot')) 
-plant_community_duex$total_cover <- rowSums(plant_community_duex[,c(8:104,106)]) # total cover includes litter 
+plant_community_duex$total_cover <- rowSums(plant_community_duex[,c(8:105)]) # total cover includes litter 
 plant_community_duex$total_cover
 
 # max total cover
@@ -84,7 +89,8 @@ max(plant_community_duex$total_cover)
 min(plant_community_duex$total_cover)
 hist(plant_community_duex$total_cover, main='Histogram of total plant cover', xlab="Total cover")
 
-plant_community_duex <- subset(plant_community_duex, select = -c(Litter, ...102)) # remove litter not a sp. and random row that got in here 
+plant_community_duex <- subset(plant_community_duex, select = -c(Litter)) # remove litter not a sp. and random row that got in here; this has absolute cover in the file 
+
 
 #makes everything relative to total cover; use this for relative abundance data 
 relative_cover<-apply(plant_community_duex[,8:105],2, function(x) x/plant_community_duex$total_cover)
@@ -111,6 +117,42 @@ Treat_order <- c("1", "4", "2", "3")
 trt_ordered <- data.frame(Treat, Treat_order)
 trt_ordered <- trt_ordered %>% mutate(Treat_order = as.factor(Treat_order))
 
+#updating names as per Rob's suggestion/ also to be clearer
+plant_community_diversity <- plant_community_diversity %>% rename("Paspalum sp."="Paspalum" ,
+                                                                  "Unknown Fabaceae"="Vetch" ,
+                                                                  "Unknown Asteraceae"="UNK.Aster.1")
+
+```
+note changing names as per Rob's comment for species; 
+we should change Paspalum to ‘Paspalum sp.’ And come up with better names for Vetch and UNK Aster 1. Vetch might be Vicia sp. Or, we could call it an unknown legume (Unknown Fabaceae). UNK Aster 1 could probably just be Unknown Asteraceae. 
+
+Rank abundance graphic
+
+This shows mean abundance across all 64 plots per year
+
+One is log transformed
+The other is raw abundance
+
+```{r rand abun}
+
+rank_abund <-plant_community_diversity %>%
+  gather(species, abundance, 8:104)%>%
+  group_by(species) %>% mutate(abun = mean(abundance))%>% filter(abun >0)%>%
+  group_by(species, Year) %>% summarise(mean_abun = mean(abundance)) %>% filter(mean_abun >0)
+
+rank_log <-rank_abund%>% 
+  ggplot()+geom_point(aes(x=log10(mean_abun*100), y =reorder(species,+mean_abun)), size=3)+
+  theme_bw()+labs(x="Log relative abundance (% cover)", y = "")+
+  facet_wrap(~Year)
+
+rank_raw <-rank_abund%>% 
+  ggplot()+geom_point(aes(x=(mean_abun*100), y =reorder(species,+mean_abun)), size=3)+
+  theme_bw()+labs(x="Relative abundance (% cover)", y = "")+
+  facet_wrap(~Year)
+
+#jpeg(file="FigureS1_plantcommunity_appendix.jpeg", width = 250, height = 220, units = 'mm', res = 300)
+ggarrange(rank_log, rank_raw, ncol=1, labels=c("A", "B"))
+#dev.off()
 ```
 
 Using MVabund to evaluate differences in community composition due to fungicide treatment and assess whether certain plant species are driving differences in community composition that are related to fungicide. 
@@ -152,25 +194,24 @@ mod.out.posthoc
 sp.univariate <- (mod.out$uni.p) %>% as.data.frame()
 ```
 
-Adding a column that indicates year and log transforming biomass data. Then merge with plant community matrix
+Merging biomass data with community data frame
 
 ```{r formatting biomass}
 biomass_2019 <- plotbiomass_2019 %>%
- # slice(1:64)%>%
   mutate(Year = rep("2019"))  %>% 
   group_by(Plot, Year) %>%
-  summarise(total_biomass = (`Plot.biomass(g/m^2)`)) %>% 
+  summarise(total_biomass = (Plot.biomass.g.m.2.)) %>% 
   drop_na()
 biomass_2019 <- merge(biomass_2019, plot_treatment, by =c('Plot'))
 
-biomass_2018 <- plotbiomass_2018 %>%  ungroup()%>%
+biomass_2018 <- plotbiomass_2018 %>% 
   group_by(Plot, Year) %>%
-  summarise(total_biomass = sum(`Plot.biomass(g/m^2)`))
+  summarise(total_biomass = sum(Plot.biomass.g.m.2.))
 biomass_2018 <- merge(biomass_2018, plot_treatment, by =c('Plot'))
 
 biomass_2017 <- plotbiomass_2017 %>%  
   group_by(Plot, Year) %>%
-  summarise(total_biomass = sum(`Total.Ovendried.weight(g/m^2)`)) 
+  summarise(total_biomass = sum(Total.Ovendried.weight.g.m.2.)) 
 biomass_2017 <- merge(biomass_2017, plot_treatment, by =c('Plot'))
 
 biomass <- rbind(biomass_2017, biomass_2018, biomass_2019)
@@ -188,18 +229,10 @@ Check out sorted biomass data; only done in 2018 so kept as a supplemental analy
 ```{r sorted biomass}
 sorted_biomass_2018 <- plotbiomass_2018 %>%  
   group_by(Plot, Year, Biomass.category) %>%
-  summarise(total_biomass = (`Plot.biomass(g/m^2)`))
+  summarise(total_biomass = (Plot.biomass.g.m.2.))
 sorted_biomass_2018 <- merge(sorted_biomass_2018, plot_treatment, by =c('Plot'))
 sorted_biomass_2018 <- merge(sorted_biomass_2018, trt_ordered, by =c("Treat"))
 sorted_biomass_2018 <- sorted_biomass_2018 %>% mutate(Treat_order = as.factor(Treat_order))
-
-sorted_biomass_2018 %>%
-  ggplot()+
-  geom_boxplot(aes(x= Treat, y = total_biomass, fill=Biomass.category))+ 
-  rita_theme+
-  labs(x = "",  y = bquote('log'[10]~' plant biomass (g '~m^-2*')'))+
-  scale_fill_manual(values=c('#a6611a','#018571','#f5f5f5','#80cdc1','#dfc27d'))+
-  theme(legend.position=c(0.13,0.85))
 
 biomass_wide <- sorted_biomass_2018 %>% 
   spread(Biomass.category, total_biomass)%>%
@@ -211,8 +244,9 @@ summary(bio.manova)
 
 library(DescTools)
 ```
+For the 2018 biomass data only:
 
-follow up anovas for biomass data to assess which groups contribute to variation in biomass
+Used follow up anovas for biomass data to assess which groups contribute to variation in biomass in the MANOVA
 
 ```{r anovas for biomass}
 #ANOVA on fescue
@@ -283,7 +317,9 @@ ggplot(data=sort_biomass_means, aes(x=Treat_order, y = mean, fill=Biomass.catego
 #dev.off()
 ```
 
-AUDPS calculated across parasite species; did loop so i could check values along the way  
+Next calculate disease burden = AUDPS. Note this is messy
+
+AUDPS calculated across parasite species; did loop so i could check values along the way and compare some things   
 
 ```{r parasite AUDPS cross species}
 # designate months as a factor; and put in order 
@@ -346,6 +382,8 @@ plant_community_disease <- merge(plant_community_biomass, auc_parasite, by = c("
 
 Now df has plant community, diversity, biomass and disease data. Adding information on cover of groups:
 Groups include information about plant growth such as forb, grass, woody, legume; exotic or native
+
+Note used in the analysis.SKIP. 
 
 ```{r add group data}
 plant_tidy <- plant_community_disease %>% 
@@ -641,12 +679,11 @@ Check if relative contribution of each parasite changes to test for change in co
 
 
 ```{r parasite composition}
-
 #calcualte relative contribution of each parasite to the total epidemic
 plant_parasite <- plant_SSE %>% mutate(relative_anthracnose = Anthracnose/ AUDPS_parasite,
                                        relative_rhiz = Rhiz/ AUDPS_parasite,
                                        relative_rust = Rust/AUDPS_parasite) %>%
-  gather(parasite, relative, 124:126) 
+  gather(parasite, relative, 127:129) 
   
 
  df_parasite_comp <- plant_parasite %>%
@@ -677,168 +714,18 @@ plant_parasite %>% ggplot(aes(x=Treat_order, y = relative, fill=parasite ))+
         panel.border = element_rect(colour = "black", fill=NA, size=1),
         legend.text = element_text(size=15)
 )+
-  labs(x="", y ="Relative contribution to cross-species AUDPS")
+  labs(x="", y ="Relative contribution to total disease burden")
 #dev.off()
 
 ```
 
 Log response ratio for effects of fungicide on disease used for Table S1. 
 
-```{r log response}
-library(boot)
-LRR.resamp <- function(x, i) {
-  xSub <- x[i, ] #resample x
-  LnRR <- 1-(xSub[, 1]/xSub[ ,2])
-  return(mean(LnRR))
-}
-
-######## 2017 data ##########################
-fungicide2017 <- plant_SSE %>% 
-  filter(Year =='2017') %>% 
-  filter(Treat %in% c("C->R->P")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("C->R->P"))
-  
-fungicide2017.control <- plant_SSE %>% 
-  filter(Year =='2017') %>% 
-  filter(Treat %in% c("Control")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("Control"))
-
-fungicide2017comp1 <- cbind(fungicide2017.control, fungicide2017)
-
-f2017.1 <- boot(fungicide2017comp1, LRR.resamp, R=999)
-plot(f2017.1) #look at distribution of LRRs
-out.17.1 <-boot.ci(f2017.1) #calculate CIs for LLR
-LLR17.1  <-data.frame(llr=out.17.1$t0, out.17.1$normal, Treat = "1")
-
-######################
-fungicide2017.cr_p <- plant_SSE %>% 
-  filter(Year =='2017') %>% 
-  filter(Treat %in% c("CR->P")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("CR->P"))
-
-fungicide2017comp2 <- cbind(fungicide2017.cr_p, fungicide2017)
-
-f2017.2 <- boot(fungicide2017comp2, LRR.resamp, R=999)
-plot(f2017.2) #look at distribution of LRRs
-out.17.2 <-boot.ci(f2017.2) #calculate CIs for LLR
-LLR17.2 <-data.frame(llr=out.17.2$t0, out.17.2$normal, Treat = "3")
-
-
-######################
-fungicide2017.crp <- plant_SSE %>% 
-  filter(Year =='2017') %>% 
-  filter(Treat %in% c("CRP")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("CRP"))
-
-fungicide2017comp3 <- cbind(fungicide2017.crp, fungicide2017)
-
-f2017.3 <- boot(fungicide2017comp3, LRR.resamp, R=999)
-plot(f2017.3) #look at distribution of LRRs
-out.17.3 <-boot.ci(f2017.3) #calculate CIs for LLR
-LLR17.3 <-data.frame(llr=out.17.3$t0, out.17.3$normal, Treat = "2")
-
-LLR17 <-rbind(LLR17.1, LLR17.2, LLR17.3) %>% mutate(Year = '2017')
-########################################################
-######## 2018 data ##########################
-###########################################
-fungicide2018 <- plant_SSE %>% 
-  filter(Year =='2018') %>% 
-  filter(Treat %in% c("C->R->P")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("C->R->P"))
-  
-fungicide2018.control <- plant_SSE %>% 
-  filter(Year =='2018') %>% 
-  filter(Treat %in% c("Control")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("Control"))
-
-fungicide2018comp1 <- cbind(fungicide2018.control, fungicide2018)
-
-f2018.1 <- boot(fungicide2018comp1, LRR.resamp, R=999)
-plot(f2018.1) #look at distribution of LRRs
-out.18.1 <-boot.ci(f2018.1) #calculate CIs for LLR
-LLR18.1  <-data.frame(llr=out.18.1$t0, out.18.1$normal, Treat = "1")
-
-######################
-fungicide2018.cr_p <- plant_SSE %>% 
-  filter(Year =='2018') %>% 
-  filter(Treat %in% c("CR->P")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("CR->P"))
-
-fungicide2018comp2 <- cbind(fungicide2018.cr_p, fungicide2018)
-
-f2018.2 <- boot(fungicide2018comp2, LRR.resamp, R=999)
-plot(f2018.2) #look at distribution of LRRs
-out.18.2 <-boot.ci(f2018.2) #calculate CIs for LLR
-LLR18.2 <-data.frame(llr=out.18.2$t0, out.18.2$normal, Treat = "3")
-
-
-######################
-fungicide2018.crp <- plant_SSE %>% 
-  filter(Year =='2018') %>% 
-  filter(Treat %in% c("CRP")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("CRP"))
-
-fungicide2018comp3 <- cbind(fungicide2018.crp, fungicide2018)
-
-f2018.3 <- boot(fungicide2018comp3, LRR.resamp, R=999)
-plot(f2018.3) #look at distribution of LRRs
-out.18.3 <-boot.ci(f2018.3) #calculate CIs for LLR
-LLR18.3 <-data.frame(llr=out.18.3$t0, out.18.3$normal, Treat = "2")
-
-LLR18 <-rbind(LLR18.1, LLR18.2, LLR18.3)%>% mutate(Year = '2018')
-
-######## 2019 data ##########################
-fungicide2019 <- plant_SSE %>% 
-  filter(Year =='2019') %>% 
-  filter(Treat %in% c("C->R->P")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("C->R->P"))
-  
-fungicide2019.control <- plant_SSE %>% 
-  filter(Year =='2019') %>% 
-  filter(Treat %in% c("Control")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("Control"))
-
-fungicide2019comp1 <- cbind(fungicide2019.control, fungicide2019)
-
-f2019.1 <- boot(fungicide2019comp1, LRR.resamp, R=999)
-plot(f2019.1) #look at distribution of LRRs
-out.19.1 <-boot.ci(f2019.1) #calculate CIs for LLR
-LLR19.1  <-data.frame(llr=out.19.1$t0, out.19.1$normal, Treat = "1")
-
-######################
-fungicide2019.cr_p <- plant_SSE %>% 
-  filter(Year =='2019') %>% 
-  filter(Treat %in% c("CR->P")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("CR->P"))
-
-fungicide2019comp2 <- cbind(fungicide2019.cr_p, fungicide2019)
-
-f2019.2 <- boot(fungicide2019comp2, LRR.resamp, R=999)
-plot(f2019.2) #look at distribution of LRRs
-out.19.2 <-boot.ci(f2019.2) #calculate CIs for LLR
-LLR19.2 <-data.frame(llr=out.19.2$t0, out.19.2$normal, Treat = "3")
-
-
-######################
-fungicide2019.crp <- plant_SSE %>% 
-  filter(Year =='2019') %>% 
-  filter(Treat %in% c("CRP")) %>% 
-  spread(Treat, AUDPS_parasite)%>% select(c("CRP"))
-
-fungicide2019comp3 <- cbind(fungicide2019.crp, fungicide2019)
-
-f2019.3 <- boot(fungicide2019comp3, LRR.resamp, R=999)
-plot(f2019.3) #look at distribution of LRRs
-out.19.3 <-boot.ci(f2019.3) #calculate CIs for LLR
-LLR19.3 <-data.frame(llr=out.19.3$t0, out.19.3$normal, Treat = "2")
-
-LLR19 <-rbind(LLR19.1, LLR19.2, LLR19.3)%>%mutate(Year = '2019')
-
-############################################
-############################################
-LLR_experiment <-rbind(LLR17, LLR18, LLR19)
-
-
+```{r percent change disease}
+fungice_pct <- plant_SSE %>%
+  group_by(Year, Treat)%>%
+  summarise(mean_disease = mean(AUDPS_parasite)) %>%
+  mutate(perc_change = scales::percent((mean_disease - mean_disease[Treat == 'C->R->P'])/mean_disease[Treat == 'C->R->P']))
 ```
 
 To determine the effectiveness of the fungicide treatments on pathogen epidemics we used a repeated-measures MANOVA.  The AUDPS of Anthracnose, Rhizoctonia and Rust were the three response vectors, and fungicide treatment, year, and treatment*year interactions were included as fixed effects and plot nested within year was designated as a mixed effect. 
@@ -902,7 +789,7 @@ ggplot(cross_disease_out, aes(x= Year, y = emmean, group=Treat_order))+
   annotate("text", x = 3.10, y = 45, label = "a", size=2) +  #19 cr->p
   annotate("text", x = 3.25, y = 45, label = "a", size=2)+   #19 crp
   guides(color=FALSE)+  
-  labs(x="", y="Cross-disease AUDPS")
+  labs(x="", y="Disease burden (cross-species AUDPS)")
 #dev.off()
 ```
 
@@ -910,7 +797,7 @@ Generate figure for disease burdne over time (AUDPS) for each parasite species
 
 ```{r parasite_spp, echo=FALSE}
 auc_parasite_all <- plant_SSE %>% 
-  gather(parasite, AUDPS_parasite, 120:122) %>% 
+  gather(parasite, AUDPS_parasite, 123:125) %>% 
   group_by(parasite, Treat, Year, Treat_order) %>%
   mutate(mean = mean(AUDPS_parasite), 
          n_obs = 16,
@@ -938,7 +825,7 @@ ggplot(auc_parasite_all, aes(x= Year, y=AUDPS_parasite, group=Treat_order)) +
              position=position_jitterdodge(dodge.width=0.75,  jitter.width = 0.25)) + 
   geom_errorbar(aes(ymin=mean - error, ymax=mean + error),position=dodge, width=0.1) +
   geom_point(aes(x=Year, y =(mean), fill=Treat_order), size=2.5, pch=21,  position=dodge) + 
-  labs(x="", y="AUDPS")+ #ylim(c(0,4.6))+
+  labs(x="", y="Disease burden")+ #ylim(c(0,4.6))+
   theme(axis.text.x = element_text( angle=90))+
   scale_fill_manual(values=c('#ffffcc','#a1dab4','#41b6c4','#225ea8'),
                     guide=guide_legend(override.aes=list(shape=21)), 
@@ -1014,7 +901,7 @@ rust.treat.eta
 We evaluated whether pathogen exclusion, through fungicide application, lowered plant diversity in experimental plots, and how the effects may change across years. Plant diversity was quantified using three metrics: richness, Hill-Shannon diversity (providing a balanced measure of both rare and common species), and Hill-Simpson diversity (emphasizes common species) (Jost 2006). We tested for the effects of fungicide treatment over time on plant biomass and diversity using rm-ANOVAs. All models included fungicide treatment, year, and fungicide treatment*year interactions were as fixed effects and experimental plot nested within year was a mixed effect. Then we evaluated differences among fungicide treatments and years using Tukey’s post hoc tests.
 
 
-Pt 1a. Does fungicide treatment affect plant richness?
+Pt 1a. Does fungicide treatment impact plant richness?
 
 ```{r richness}
 # set orthogonal contrasts
@@ -1026,7 +913,7 @@ sp_aov
 summary(sp_aov)
 sp_aov <- aov((sp_rich)~Treat *Year + Error(Plot/Year), data=plant_SSE)
 
-#calculate ETA squ.
+#calculate ETA squ.by hand
 rich.year.eta <-(summary(sp_aov)[["Error: Plot:Year"]][[1]]["Year" , "F value"]*summary(sp_aov)[["Error: Plot:Year"]][[1]]["Year" , "Df"])/(summary(sp_aov)[["Error: Plot:Year"]][[1]]["Year" , "F value"]*summary(sp_aov)[["Error: Plot:Year"]][[1]]["Year" , "Df"]+summary(sp_aov)[["Error: Plot:Year"]][[1]]["Residuals" , "Df"])
 rich.year.eta
 
@@ -1285,7 +1172,7 @@ richness17 <- ggplot(data=sprichout17, aes(x=Year, y = 10^(emmean), group=Treat_
   guides(fill=guide_legend("Fungicide",  keywidth=0.12,
                            keyheight=0.12, override.aes = list(shape=21),
                            default.unit="inch"), color= FALSE) +
-  annotate("text", x = 1, y = 10, label = "B", size=4) + #2017
+ # annotate("text", x = 1, y = 10, label = "B", size=4) + #2017
   annotate("text", x = 0.73, y = 8.5, label = "a", size=3) + #17 never sprayed
   annotate("text", x = 0.9, y = 8.3, label = "b", size=3) +  #17 always sprayed
   annotate("text", x = 1.10, y = 8.3, label = "b", size=3) +  #17 cr->p
@@ -1386,7 +1273,7 @@ richness18 <- ggplot(data=sprichout18, aes(x=Year, y = 10^(emmean), group=Treat_
     theme(axis.title.x=element_blank(),
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())+
-  annotate("text", x = 1, y = 12.5, label = "A", size=4) + #2018
+#  annotate("text", x = 1, y = 12.5, label = "A", size=4) + #2018
   annotate("text", x = 0.73, y = 11.2, label = "a", size=3) + #18 never sprayed
   annotate("text", x = 0.9, y = 10.5, label = "b", size=3) +  #18 always sprayed
   annotate("text", x = 1.10, y = 10.5, label = "b", size=3) +  #18 cr->p
@@ -1488,7 +1375,7 @@ richness19 <- ggplot(data=sprichout19, aes(x=Year, y = 10^(emmean), group=Treat_
   guides(fill=guide_legend("Fungicide",  keywidth=0.12,
                            keyheight=0.12, override.aes = list(shape=21),
                            default.unit="inch"), color= FALSE) +
-  annotate("text", x = 1, y = 10, label = "B", size=4) + #2019
+ # annotate("text", x = 1, y = 10, label = "B", size=4) + #2019
   annotate("text", x = 0.73, y = 8.1, label = "a", size=3) + #19 never sprayed
   annotate("text", x = 0.9, y = 7.6, label = "b", size=3) +  #19 always sprayed
   annotate("text", x = 1.10, y = 7.6, label = "b", size=3) +  #19 cr->p
@@ -1562,6 +1449,7 @@ Generates figure 2
 
 ```{r multipanel diversity graphic}
 #jpeg(filename="Figure2_plantcommunityMS.jpeg", width=180, height=180, units="mm", bg="white", res=300)
+#ggsave("Figure2_plantcommunityMS.eps", width=180, height=180,)
 ggarrange(richness17, shannon17, simpson17,
           richness18, shannon18, simpson18,
           richness19, shannon19, simpson19, ncol=3, nrow=3,
@@ -1616,7 +1504,7 @@ bio.graph <-ggplot(data=bio.out, aes(x=Year, y = emmean, group=Treat_order))+
                            keyheight=0.12, override.aes = list(shape=21),
                            default.unit="inch"), color= FALSE)+
   guides(color=FALSE)+
-  labs(x = "",  y = bquote('plant biomass (g '~m^-2*')'))+
+  labs(x = "Year",  y = bquote('Plant biomass (g '~m^-2*')'))+
   annotate("text", x = 1, y = 1700, label = "B", size=4) + #2017
   annotate("text", x = 2, y = 1700, label = "B", size=4) + #2018
   annotate("text", x = 3, y = 2300, label = "A", size=4) +  #2019
@@ -1638,7 +1526,7 @@ bio.graph <-ggplot(data=bio.out, aes(x=Year, y = emmean, group=Treat_order))+
 
 #jpeg(filename="Figure3_plantcommunityMS.jpeg", width=90, height=90, units="mm", bg="white", res=300)
 bio.graph
-dev.off()
+#dev.off()
 ```
 We also assessed whether fungicide treatment influenced patterns in plant community composition. Patterns of plant community dissimilarity were visualized using non-metric multidimensional scaling based on Bray-Curtis distances of plant relative cover. A PERMANOVA (function Adonis) was used to test for differences in communities between years and among fungicide treatments (permutations = 999). To determine whether these results were attributed to both patterns in community abundance (i.e., cover) and composition (i.e., presence-absence), we reran this analysis with a presence-absence plant community matrix and a Jaccard index. 
 
@@ -1646,17 +1534,15 @@ We also assessed whether fungicide treatment influenced patterns in plant commun
 set.seed(1234567) #make sure to set seed to get the same result, this is a permutation based method 
 # create community matrix and envi data matrix 
 plant<-plant_SSE[,8:104] # makes new matrix with community data (columns 2-100)
-plot<-plant_SSE[,c(1:5,109:110,120:122)]# makes new matrix with envi data (columns 1-3)
+plot<-plant_SSE[,c(1:5,109:110)]# makes new matrix with envi data (columns 1-3)
 plot$Year <- as.factor(plot$Year)
 # more formatting
 # remove columns 
 plant<-plant[, colSums(abs(plant)) !=0] # removes columns with all zeros
 
-# remove rows without plant just in case (residual from using parasite data where you have uninfected hosts )
+# remove rows without plant just in case,
 plant.2<-plant[rowSums(abs(plant))!=0,]  # remove rows with no plant
 plot.2<-plot[rowSums(abs(plant))!=0,]  # remove rows with no plant 
-
-plant_pa<-apply(plant.2,2, function(x) {ifelse(x==0,0,1)})  #makes presence-absence matrix
 
 ```
 
@@ -1715,20 +1601,13 @@ cent.95 <- plant_all %>%
             NMDS2_95 = ci95(NMDS2))
 cent.SE<- aggregate(scrs17 ~ Treat + Year,data=plant_all,se)
 cent <- merge(cent, cent.95, by =c("Treat", "Year"))
-# write.csv(cent, "NMDS_centroids_plant_community_SSE_relative_cover.csv")
 # 
 # topp<-max(cent[,5:6]) #determines maximum and minimum values for the plot axes
 # bott<-min(cent[,5:6]) #I draw from both data sets because I make the graph sqaure
 
 plant_all$Year <- as.factor(plant_all$Year)
 plant_all$Treat <- as.factor(plant_all$Treat)
-
-plant_all_pa$Year <- as.factor(plant_all_pa$Year)
-plant_all_pa$Treat <- as.factor(plant_all_pa$Treat)
-
 cent$Year <- as.factor(cent$Year)
-cent_pa$Year <- as.factor(cent_pa$Year)
-
 cent_graph <- merge(cent, trt_ordered, by = c("Treat"))
 
 ```
@@ -1973,8 +1852,6 @@ ggplot(cent_graph, aes(x= NMDS1, y=NMDS2, group=Treat_order))+
 Here we are calculating distance from the centroid as a measure of beta diversity 
 
 ```{r distance centroid}
-cent <- cent %>% dplyr::select(-c(X1))
-plant_all <- plant_all %>% dplyr::select(-c(X1))
 nmds_all <- merge(cent, plant_all, by = c("Treat", "Year"))
 ```
 
@@ -2002,8 +1879,8 @@ for (i in plot_list){
   
   from_center<- dist.pt (as.numeric(plot_target[1,3]),
                          as.numeric(plot_target[1,4]),
-                         as.numeric(plot_target[1,15]), 
-                         as.numeric(plot_target[1,16] ))
+                         as.numeric(plot_target[1,12]), 
+                         as.numeric(plot_target[1,13] ))
   
   d_cent <- data.frame(i, j, from_center)
   out_centroid <-rbind(out_centroid, d_cent)
@@ -2062,7 +1939,7 @@ variation.graph <-ggplot(data=mean.community.var, aes(x=Year, y = emmean, group=
                            keyheight=0.12, override.aes = list(shape=21),
                            default.unit="inch"), color= FALSE)+
   guides(color=FALSE)+
-  labs(x = "",  y = bquote('log'[10]~' distance to centroid'))+
+  labs(x = "Year",  y = bquote('log'[10]~' Distance to centroid'))+
   annotate("text", x = 0.75, y = -1.0, label = "a", size=2.5) + #17 never sprayed
   annotate("text", x = 0.90, y = -0.85, label = "ab", size=2.5) +  #17 always sprayed
   annotate("text", x = 1.07, y = -0.60, label = "b", size=2.5) +  #17 cr->p
