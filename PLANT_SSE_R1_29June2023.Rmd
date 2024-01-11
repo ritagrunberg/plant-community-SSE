@@ -21,14 +21,16 @@ library(emmeans)
 library(lmerTest)
 library(afex)
 
-plant_groups <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/plant_groups.csv")
-plant_community <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/plant_community_fixed_2Dec2019.csv",fileEncoding = 'UTF-8-BOM')
-plot_treatment <- read.csv("C:/Users/grunberg/Dropbox/CURRENT_STUFF/plot_treatment.csv")
-plotbiomass_2017 <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/2017PlotBiomass_SSprayExp.csv", fileEncoding = 'UTF-8-BOM')
-plotbiomass_2018 <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/2018PlotBiomass_SSprayExp.csv",  fileEncoding = 'UTF-8-BOM')
-plotbiomass_2019 <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/2019PlotBiomass_SSprayExp.csv", fileEncoding = 'UTF-8-BOM')
-SSE_prevalence_overall <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/SSE_prevalence_overall.csv", fileEncoding = 'UTF-8-BOM') #overall prevalence 
-SSE_prevalence_spp <- read.csv("C:/Users/grunberg/Documents/GitHub/plant-community-SSE/Data/SSE_prevalence_spp.csv")
+setwd("C:/Users/rlg59/Documents/GitHub/plant-community-SSE")
+
+plant_groups <- read.csv("./Data/plant_groups.csv")
+plant_community <- read.csv("./Data/plant_community_fixed_2Dec2019.csv",fileEncoding = 'UTF-8-BOM')
+plot_treatment <- read.csv("./Data/plot_treatments.csv",fileEncoding = 'UTF-8-BOM')
+plotbiomass_2017 <- read.csv("./Data/2017PlotBiomass_SSprayExp.csv", fileEncoding = 'UTF-8-BOM')
+plotbiomass_2018 <- read.csv("./Data/2018PlotBiomass_SSprayExp.csv",  fileEncoding = 'UTF-8-BOM')
+plotbiomass_2019 <- read.csv("./Data/2019PlotBiomass_SSprayExp.csv", fileEncoding = 'UTF-8-BOM')
+SSE_prevalence_overall <- read.csv("./Data/SSE_prevalence_overall.csv", fileEncoding = 'UTF-8-BOM') #overall prevalence 
+SSE_prevalence_spp <- read.csv("./Data/SSE_prevalence_spp.csv")
 #prevalence for each parasite spp. 
 ```
 
@@ -76,10 +78,11 @@ paspalum$Paspalum <- rowSums(paspalum[,3:4])
 paspalum <- paspalum %>% dplyr::select(Plot, Year, Paspalum) 
 plant_community <- merge(plant_community, paspalum, by =c("Plot", "Year")) # add paspalum sp.
 plant_community <-  subset(plant_community, select = -c(57,59)) # remove paspalum dilatatum and notatum
+plant_community <-plant_community %>% select(-c(X))
 
 #merge DFs
 plant_community_duex <- merge(plot_treatment, plant_community, by=c('Plot')) 
-plant_community_duex$total_cover <- rowSums(plant_community_duex[,c(8:105)]) # total cover includes litter 
+plant_community_duex$total_cover <- rowSums(plant_community_duex[,c(8:103)]) # total cover includes litter 
 plant_community_duex$total_cover
 
 # max total cover
@@ -92,8 +95,8 @@ plant_community_duex <- subset(plant_community_duex, select = -c(Litter)) # remo
 
 
 #makes everything relative to total cover; use this for relative abundance data 
-relative_cover<-apply(plant_community_duex[,8:105],2, function(x) x/plant_community_duex$total_cover)
-total <- rowSums(relative_cover[,1:97]) # checks that this works, so not all plots will add up to 100 because of the litter 
+relative_cover<-apply(plant_community_duex[,8:103],2, function(x) x/plant_community_duex$total_cover)
+total <- rowSums(relative_cover[,1:96]) # checks that this works, so not all plots will add up to 100 because of the litter 
 max(total)
 min(total)
 
@@ -111,9 +114,8 @@ max(plant_community_diversity$sp_rich)
 min(plant_community_diversity$sp_rich)
 
 # order the treatments for plotting purposes 
-Treat <- c( "C->R->P", "Control", "CR->P" ,"CRP")
+Treat <- c("Never", "Year-round", "7-months", "9-months")
 Treat_order <- c("1", "4", "2", "3")
-#Fungicide <- c("Never", "Year-round", "7-months", "9-months")
 trt_ordered <- data.frame(Treat, Treat_order)
 trt_ordered <- trt_ordered %>% mutate(Treat_order = as.factor(Treat_order))
 
@@ -158,40 +160,42 @@ ggarrange(rank_log, rank_raw, ncol=1, labels=c("A", "B"))
 
 Using MVabund to evaluate differences in community composition due to fungicide treatment and assess whether certain plant species are driving differences in community composition that are related to fungicide. 
 
+To run fasterer can skip this part 
+
 ```{r mvabun model}
-  library(mvabund)
-  plant_list <- plant_community_diversity %>%
-   select(8:104) %>%
-   select_if(colSums(.) != 0) #remove plant sp that don't occur in the data set
-
-  plant_community_diversity <- plant_community_diversity %>% mutate(Year = as.factor(Year))
- plant.data <- mvabund(plant_list)
- is.mvabund(plant.data)
-#
-# #constrain the permutation within a plot by designating shuffletset; nrow = within the abundance data and control = plot/block
-permID <- shuffleSet(n=nrow(plant.data),
-                     nset=999,
-                     control=how(block=plant_community_diversity$Plot))
-
-mod0 <- manyglm(plant.data ~ plant_community_diversity$Year* plant_community_diversity$Treat, family = "negative.binomial")
-sppcoef <- coef(mod0)
-#coefplot(mod0)
-plot(mod0)
-summary(mod0)
-set.seed(51)
-mod.out <- anova(mod0,
-                 bootID=permID,
-                 p.uni = 'adjusted',
-                 test = 'LR')
-mod.out
-mod.out.posthoc <- anova(mod0,
-                         pairwise.comp = as.factor(plant_community_diversity$Year),
-                         bootID=permID, 
-                         p.uni = 'adjusted',
-                         test = 'LR')
-mod.out.posthoc
-
-sp.univariate <- (mod.out$uni.p) %>% as.data.frame()
+#   library(mvabund)
+#   plant_list <- plant_community_diversity %>%
+#    select(8:104) %>%
+#    select_if(colSums(.) != 0) #remove plant sp that don't occur in the data set
+# 
+#   plant_community_diversity <- plant_community_diversity %>% mutate(Year = as.factor(Year))
+#  plant.data <- mvabund(plant_list)
+#  is.mvabund(plant.data)
+# #
+# # #constrain the permutation within a plot by designating shuffletset; nrow = within the abundance data and control = plot/block
+# permID <- shuffleSet(n=nrow(plant.data),
+#                      nset=999,
+#                      control=how(block=plant_community_diversity$Plot))
+# 
+# mod0 <- manyglm(plant.data ~ plant_community_diversity$Year* plant_community_diversity$Treat, family = "negative.binomial")
+# sppcoef <- coef(mod0)
+# #coefplot(mod0)
+# plot(mod0)
+# summary(mod0)
+# set.seed(51)
+# mod.out <- anova(mod0,
+#                  bootID=permID,
+#                  p.uni = 'adjusted',
+#                  test = 'LR')
+# mod.out
+# mod.out.posthoc <- anova(mod0,
+#                          pairwise.comp = as.factor(plant_community_diversity$Year),
+#                          bootID=permID, 
+#                          p.uni = 'adjusted',
+#                          test = 'LR')
+# mod.out.posthoc
+# 
+# sp.univariate <- (mod.out$uni.p) %>% as.data.frame()
 ```
 
 Merging biomass data with community data frame
@@ -1029,7 +1033,7 @@ rich.graph <-ggplot(data=sprichout, aes(x=Year, y = 10^(emmean), group=Treat_ord
 rich.graph
 ```
 
-Pt 1. b-c. Does fungicide affect Shannon and Simpson hill diversity 
+Pt 1. b-c. Does fungicide impact plant Shannon and Simpson hill diversity 
 
 ```{r shannon hill numbers}
 #Q1.1: Does richness differ between treatment groups 
